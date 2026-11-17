@@ -1,0 +1,48 @@
+name: サイトを組み立てて公開
+# 一覧のデータ（newsall.json）は、毎日の収集（非公開の anime-database の newsall.yml）が公開の anime-world に置くものを取ってくる。
+# 収集は日本時間18時30分の予定だが GitHub の混み具合で遅れるため、3時間ごとに取り直して組み立てる。
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 使っていない gh-pages の枝が残っていれば消す
+        run: git push origin --delete gh-pages || true
+      - name: 最新の一覧データを取ってくる
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/nzanke/anime-world/main/data/newsall.json -o /tmp/newsall.json && python3 -c "import json;json.load(open('/tmp/newsall.json'))" && cp /tmp/newsall.json data/newsall.json || echo '公開用の一覧がまだないので、手元のものを使います'
+          if ! git diff --quiet data/newsall.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "一覧データを更新" data/newsall.json
+            git push
+          fi
+      - run: python3 build.py
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
