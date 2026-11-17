@@ -15,18 +15,20 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(e.d || ''), i0 = e.g[0];
     var dd = m ? +m[3] + '<small>' + WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + '</small>' : '<span class="dq">—</span>';
     var tags = e.g.map(function (i) { return '<span class="tg ti" data-i="' + esc(i) + '">' + esc(i) + '</span>'; }).join('') +
-      (e.n ? '<span class="tg tw" data-n="' + esc(e.n) + '">' + esc(e.n) + '</span>' : '');
+      (e.n ? '<span class="tg tw" data-n="' + esc(e.n) + '">' + esc(e.n) + '</span>' : '') +
+      (e.o ? '<span class="also">ほかの記事：' + e.o.map(function (o) { return '<a href="' + esc(o[1]) + '" target="_blank" rel="noopener" title="' + esc(o[2]) + '">' + esc(o[0]) + '</a>'; }).join('・') + '</span>' : '');
     return '<li class="ur sr"><span class="ud">' + dd + '</span>' +
       '<span class="ic" style="--h:' + hue(i0) + '" title="' + esc(i0) + '">' + esc(AB[i0] || '他') + '</span>' +
       '<span class="sb"><a class="un" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + esc(e.t) + '</a>' +
-      '<span class="tags">' + tags + '</span></span><span class="st">' + esc(e.s) + '</span></li>';
+      '<span class="tags">' + tags + '</span></span><span class="st">' + esc(e.s) + (e.c ? '<b class="cn" title="伝えた記事の数">' + e.c + '</b>' : '') + '</span></li>';
   }
   var lastG = '';
   function mon(e) { var m = /^(\d{4})-(\d{2})/.exec(e.d || ''); return m ? m[1] + '年' + (+m[2]) + '月' : '日付なし'; }
   function render(more) {
     if (!more) { $('list').innerHTML = ''; shown = 0; lastG = ''; }
+    var big = $('big').checked;
     var h = '';
-    res.slice(shown, shown + PAGE).forEach(function (e) { var g = mon(e); if (g !== lastG) { h += '<li class="ug">' + esc(g) + '</li>'; lastG = g; } h += row(e); });
+    res.slice(shown, shown + PAGE).forEach(function (e) { var g = big ? ((e.c || 1) + ' 件が伝えた話題') : mon(e); if (g !== lastG) { h += '<li class="ug">' + esc(g) + '</li>'; lastG = g; } h += row(e); });
     $('list').insertAdjacentHTML('beforeend', h);
     shown = Math.min(shown + PAGE, res.length);
     $('more').hidden = shown >= res.length;
@@ -41,7 +43,7 @@
   function inGroup(e, g) { return e.g.some(function (i) { return GI[i] === g; }); }
   function search() {
     var terms = $('q').value.split(/\s+/).map(norm).filter(Boolean), site = $('site').value;
-    var base = all.filter(function (e) { return (!site || e.s === site) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
+    var base = all.filter(function (e) { return (!site || e.s === site || (e.o || []).some(function (o) { return o[0] === site; })) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
     [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
       var g = b.getAttribute('data-g'); b.querySelector('.n').textContent = ' ' + (g ? base.filter(function (e) { return inGroup(e, g); }).length : base.length).toLocaleString();
     });
@@ -52,6 +54,7 @@
     var ps = Object.keys(picked);
     res = ps.length ? inG.filter(function (e) { return ps.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : inG;
     if ($('old').checked) res = res.slice().reverse();
+    if ($('big').checked) res = res.slice().sort(function (a, b) { return (b.c || 1) - (a.c || 1); });
     $('count').textContent = res.length.toLocaleString() + ' 件 / 全 ' + all.length.toLocaleString() + ' 件';
     render(false);
     var qs = [];
@@ -69,7 +72,7 @@
     groups = j.groups || [];
     groups.forEach(function (x) { G[x[0]] = x[1]; x[1].forEach(function (i) { GI[i] = x[0]; }); });
     all = j.items || [];
-    all.forEach(function (e) { e._t = norm([e.t, e.n, e.s].join(' ')); });
+    all.forEach(function (e) { e._t = norm([e.t, e.n, e.s].concat((e.o || []).map(function (o) { return o[0] + ' ' + o[2]; })).join(' ')); });
     var p = new URLSearchParams(location.search);
     if (p.get('q')) $('q').value = p.get('q');
     if (p.get('g') && G[p.get('g')]) { setGroup(p.get('g')); (p.get('i') || '').split(',').forEach(function (i) { if (GI[i] === grp) picked[i] = 1; }); subs(); }
@@ -77,7 +80,7 @@
   });
   var timer;
   $('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(search, 150); });
-  ['site', 'old'].forEach(function (id) { $(id).addEventListener('change', search); });
+  ['site', 'old', 'big'].forEach(function (id) { $(id).addEventListener('change', search); });
   $('seg').addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
     setGroup(b.getAttribute('data-g')); search();

@@ -264,3 +264,5 @@ h2.add-one{margin-top:8px}
 #sub button .n{font-weight:400;opacity:.8;font-variant-numeric:tabular-nums}
 @media (prefers-color-scheme:dark){#sub button{color:oklch(.85 .08 var(--h));box-shadow:inset 0 0 0 1px oklch(.4 .07 var(--h))}}
 .tg.ti{cursor:pointer}
+.st .cn{display:inline-block;margin-left:6px;min-width:18px;padding:0 5px;border-radius:9px;font-size:11px;line-height:18px;text-align:center;color:#fff;background:oklch(.55 .14 250)}
+.sr .tags .also a{color:inherit}
