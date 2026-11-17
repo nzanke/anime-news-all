@@ -30,7 +30,7 @@ ABOUT = f'''<details class="about"><summary><span class="qi">?</span>このサ�
 <p>アニメのニュースを毎日集め、項目ごとに絞り込めるようにした一覧です。上の色のボタンでまとまりを選ぶと、その下に細かい項目が出ます（項目は複数選べます）。1本の記事が複数の項目に入ることがあります。どの項目にも当たらない記事は「その他」です。</p>
 {items_txt}
 <p><b>検索</b>：スペースで区切ると、すべての語を含むものだけを出します。記事の下の作品名を押すと、その作品名で検索します。</p>
-<p><b>集めている記事</b>：MANTANWEB と アニメイトタイムズ のアニメの記事（先行カット・あらすじの記事は除いています）。毎日夕方に新着を集めます。過去の記事は2026年10月17日から集めています。</p>
+<p><b>集めている記事</b>：MANTANWEB と アニメイトタイムズ のアニメの記事（先行カット・あらすじの記事は除いています）と、ニュースサイト ceek.jp の RSS で見つけた各紙のアニメの記事（訃報・人事など）。毎日夕方に新着を集めます。過去の記事は2026年10月17日から集めています。</p>
 <p><b>載せているもの</b>：記事の日付・見出し・リンクと、見出しから読み取った作品名と項目。記事の本文は載せていません。項目の読み取りは見出しの言葉から決まった規則で機械的に行っているため、誤りが混じることがあります。</p>
 <p>アニメの制作決定と放送日・公開日だけを見るなら <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>。</p>
 </div></details>'''
@@ -56,7 +56,7 @@ doc = f'''<!DOCTYPE html>
 <main>
 {body}
 </main>
-<footer class="site"><p>MANTANWEB・アニメイトタイムズの記事の見出しとリンクを毎日集めて並べています（記事の本文は載せていません）。制作決定は <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>、インタビュー記事は <a href="https://nzanke.github.io/anime-world/">アニメインタビュー検索</a>。</p></footer>
+<footer class="site"><p>MANTANWEB・アニメイトタイムズと、ceek.jp で見つけた各紙の記事の見出しとリンクを毎日集めて並べています（記事の本文は載せていません）。制作決定は <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>、インタビュー記事は <a href="https://nzanke.github.io/anime-world/">アニメインタビュー検索</a>。</p></footer>
 </div><script>window.NEWS="newsall.json?v={NEWS_V}";window.HUE={json.dumps(HUE, ensure_ascii=False)}</script><script src="news.js?v={NJS_V}"></script><script data-goatcounter="https://nzanke.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script></body></html>
 '''
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(doc)
