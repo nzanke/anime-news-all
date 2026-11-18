@@ -23,7 +23,7 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">'
          # 半角の数字・英字・記号だけ BIZ UDゴシック（text= でその文字だけの字体にし、日本語は BIZ UDPゴシック に落ちる）
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&display=swap&text=%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~">')
-HUE = {'作品情報': 250, 'イベント情報': 25, 'アイテム情報': 345, 'コラボ情報': 45, 'その他': 200}
+HUE = {'新作情報': 250, 'イベント情報': 25, 'アイテム情報': 345, 'コラボ情報': 45, 'その他': 200}
 GROUPS = NEWS['groups']
 items_txt = ''.join(f'<p><b>{esc(x[0])}</b>：{"、".join(esc(i) for i in x[1])}{"（小カテゴリを選ぶと記事が出ます）" if len(x) > 2 else ""}</p>' for x in GROUPS)
 ABOUT = f'''<details class="about"><summary><span class="qi">?</span>このサイトについて</summary><div class="aboutbox"><p class="abh">このサイトについて</p>
