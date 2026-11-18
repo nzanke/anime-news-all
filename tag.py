@@ -93,6 +93,12 @@ def _day(d):
     except Exception: return 0
 # MANTANWEB・アニメイトタイムズの自動取得の記事は使わない（依頼者の判断、2026-11-18。サイトの軸を RSS に戻す。過去の版は archive/2026-11-18）
 USE_SITES = False
+# 大カテゴリは RSS のカテゴリ（依頼者の判断、2026-11-18）。当面は大カテゴリだけで、小カテゴリはこのあと作る。RSS_CATS=False で以前の分け方（SHOW）に戻る
+RSS_CATS = True
+CAT_ORDER = ['エンタメ', '訃報・人事', '社会', '経済', 'IT', '国際', '中国・韓国', '政治', '地方・地域', 'サイエンス', 'スポーツ', 'その他']
+def cat(r):
+    c = re.sub(r'×アニメ$', '', r.get('feed') or '')
+    return c if c in CAT_ORDER else 'その他'
 def records():
     p = os.path.join(HERE, 'data', 'newsall_sites.json')
     if USE_SITES and os.path.exists(p):
@@ -103,7 +109,7 @@ def records():
     if os.path.exists(p):
         for l in open(p, encoding='utf-8'):
             x = json.loads(l)
-            yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'ceek_items': FI.get(x.get('feed'), {}).get('items', []), 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx')}
+            yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'feed': x.get('feed', ''), 'ceek_items': FI.get(x.get('feed'), {}).get('items', []), 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx')}
 if True:
     for r in records():
         cu = canon(r['url'])   # 同じ記事の重なり（自動取得と RSS、RSS どうし）を1本にする。先に読む自動取得のほうを残す
@@ -173,6 +179,7 @@ if True:
             g = show([x for x in g if GROUP_OF.get(x) not in lab['r']] + [x for x in show(lab.get('g', [])) if GROUP_OF.get(x) in lab['r']])
         elif lab:   # 全体で付けた分類は、その分類＋分類を付けたあとに増えた項目の規則の判定
             g = show([x for x in lab.get('g', [])] + [x for x in tags if x not in KNOWN and x != 'その他'])
+        if RSS_CATS: g = [cat(r)]   # 当面は RSS のカテゴリだけを大カテゴリにする（細かい判定は下の k に残す）
         e = {'d': r.get('date') or '', 't': r.get('title') or t, 'u': r['url'], 's': r.get('site') or '', 'g': g}
         if n: e['n'] = n
         items.append(e)
@@ -206,11 +213,11 @@ for c in clusters:
     es = c[1]
     m = max(es, key=lambda x: (x['s'] in ('MANTANWEB', 'アニメイトタイムズ'), len(x['t'])))   # 代表：アニメの専門サイトの、見出しの長いもの
     r = dict(m); r['d'] = min(x['d'] for x in es if x['d']) if any(x['d'] for x in es) else m['d']
-    r['g'] = show([x for e in es for x in e['g']])
+    r['g'] = sorted({x for e in es for x in e['g']}, key=lambda x: CAT_ORDER.index(x) if x in CAT_ORDER else 99) if RSS_CATS else show([x for e in es for x in e['g']])
     if len(es) > 1: r['o'] = [[x['s'], x['u'], x['t']] for x in es if x is not m]; r['c'] = len(es)
     out.append(r)
 items = sorted(out, key=lambda e: (e['d'], e['u']), reverse=True)
-groups = [[g, its] + ([1] if sub else []) for g, its, sub in SHOW]   # 3つ目が 1 の大カテゴリは、小カテゴリを選んだときだけ記事を出す
+groups = [[c, [c]] for c in CAT_ORDER if any(c in e['g'] for e in items)] if RSS_CATS else [[g, its] + ([1] if sub else []) for g, its, sub in SHOW]   # 3つ目が 1 の大カテゴリは、小カテゴリを選んだときだけ記事を出す
 json.dump({'groups': groups, 'items': items}, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 from collections import Counter
 c = Counter(x for e in items for x in e['g'])

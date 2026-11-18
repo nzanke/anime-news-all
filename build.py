@@ -25,12 +25,11 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">'
          # 半角の数字・英字・記号だけ BIZ UDゴシック（text= でその文字だけの字体にし、日本語は BIZ UDPゴシック に落ちる）
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&display=swap&text=%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~">')
-HUE = {'新作情報': 250, 'イベント情報': 25, 'アイテム情報': 345, 'コラボ情報': 45, 'その他': 200}
+HUE = {'エンタメ': 330, '訃報・人事': 270, '社会': 200, '経済': 150, 'IT': 230, '国際': 180, '中国・韓国': 10, '政治': 300, '地方・地域': 120, 'サイエンス': 250, 'スポーツ': 40, 'その他': 70}
 GROUPS = NEWS['groups']
-items_txt = ''.join(f'<p><b>{esc(x[0])}</b>：{"、".join(esc(i) for i in x[1])}{"（小カテゴリを選ぶと記事が出ます）" if len(x) > 2 else ""}</p>' for x in GROUPS)
+items_txt = '' if True else ''.join(f'<p><b>{esc(x[0])}</b>：{"、".join(esc(i) for i in x[1])}{"（小カテゴリを選ぶと記事が出ます）" if len(x) > 2 else ""}</p>' for x in GROUPS)
 ABOUT = f'''<details class="about"><summary><span class="qi">?</span>このサイトについて</summary><div class="aboutbox"><p class="abh">このサイトについて</p>
-<p>アニメのニュースを毎日集め、項目ごとに絞り込めるようにした一覧です。上の色のボタンでまとまりを選ぶと、その下に細かい項目が出ます。項目は1回押すとその項目で絞り込み（複数選べます）、2回押すとその項目を除外、3回押すと元に戻ります。除外した項目は、まとまりを切り替えても効いたままです（「除外中」の項目を押すと除外をやめます）。1本の記事が複数の項目に入ることがあります。どの項目にも当たらない記事は「その他」の「未分類」です。「その他」のカテゴリは、小カテゴリを選んだときだけ記事が出ます。</p>
-{items_txt}
+<p>アニメに関するニュースを30分ごとに集め、分野ごとに絞り込めるようにした一覧です。上の色のボタンで分野を選ぶと、その分野の記事が出ます。分野はニュースサイトの RSS の分類です。</p>
 <p><b>同じ話題</b>：違うサイトが同じ話題を伝えた記事は1行にまとめ、伝えた記事の数を右に出しています（見出しの似ている度合いで機械的にまとめているため、誤りが混じることがあります）。「伝えた記事の多い順」で、多くのサイトが伝えた話題から並べます。</p>
 <p><b>検索</b>：スペースで区切ると、すべての語を含むものだけを出します。記事の下の作品名を押すと、その作品名で検索します。</p>
 <p><b>集めている記事</b>：ニュースサイトの RSS で見つけた、新聞各紙・ニュースサイトのアニメに関する記事。30分ごとに新着を集めます。</p>
