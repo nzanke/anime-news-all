@@ -15,7 +15,7 @@ import glob, json, os, re, sys, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'data', 'newsall.json')
-from rules import N, ITEMS, RX, ANIME, LIVE, LEAD_ITEMS, nf   # 規則は rules.py に（rss.py・非公開側の書き出しの判定と共通）
+from rules import N, ITEMS, RX, ANIME, LIVE, LEAD_ITEMS, NOT_ANIME, nf   # 規則は rules.py に（rss.py・非公開側の書き出しの判定と共通）
 
 # ---- 表示するカテゴリ（依頼者の判断、2026-11-18）。上の ITEMS は細かい判定の単位で、表示のときにここでまとめる。
 # 大カテゴリ4つ（新作情報・イベント情報・アイテム情報・コラボ情報）は押すとカテゴリ内の記事が全部出る。
@@ -114,7 +114,8 @@ if True:
         if r.get('date'): SEEN_T[tk] = _day(r['date'])
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
-        if not r.get('anime') and not ANIME.search(t): continue   # 見出しにアニメの語がない（anime_title の RSS）。RSS は「アニメ」で検索したものなので書き出しにはほぼ必ずアニメの語があり、手がかりにならない   # アニメ欄以外の一覧（映画欄）の実写映画など
+        if not r.get('anime') and not ANIME.search(t): continue
+        if NOT_ANIME.search(t) and not ANIME.search(t): continue   # 特撮・スポーツ・株など（rules.py の NOT_ANIME）   # 見出しにアニメの語がない（anime_title の RSS）。RSS は「アニメ」で検索したものなので書き出しにはほぼ必ずアニメの語があり、手がかりにならない   # アニメ欄以外の一覧（映画欄）の実写映画など
         if 'アニメ!アニメ!' in nf(r.get('site')) and WHERE.search(t): continue
         lab = LABELS.get(key(r['url']))
         if lab and lab.get('x'): continue   # 「載せない」と分類された記事
@@ -145,12 +146,18 @@ if True:
         # アイテム情報の整理（依頼者の分類から、2026-11-18）
         if '音楽ソフト' in tags and re.search(r'首位|ランクイン|\d+位|チャート|スコープ', ct): tags.remove('音楽ソフト')
         if 'グッズ・アパレル・雑貨' in tags and (re.search(r'コラボ|×', ct) or '展覧会' in tags or '原画展' in tags or 'その他' in tags): tags.remove('グッズ・アパレル・雑貨')   # コラボ商品はコラボ情報、展覧会の物販はイベント情報の側
-        if 'グッズ・アパレル・雑貨' in tags and set(tags) & {'入場者特典', 'フェア・ポップアップ', 'くじ', 'ビデオソフト', '音楽ソフト', '書籍', '雑誌特集', '劇場販売商品'} and not re.search(r'グッズ|商品化|新商品|アパレル|雑貨', ct): tags.remove('グッズ・アパレル・雑貨')
+        if 'グッズ・アパレル・雑貨' in tags and set(tags) & {'入場者特典', 'フェア・ポップアップ', 'くじ', 'ビデオソフト', '音楽ソフト', '書籍', '雑誌特集', '劇場販売商品'} and not re.search(r'グッズ|商品|アパレル|雑貨', ct): tags.remove('グッズ・アパレル・雑貨')
         if '放送・公開日' in tags and re.search(r'(映画|劇場版|劇場アニメ).{0,40}(公開決定|上映決定|上映も決定|\d{4}年公開)', t) and not any(x.startswith('制作決定') for x in tags): tags.append('制作決定（映画化）')   # 映画の「公開決定」は映画化の知らせ（依頼者の分類から）
         if '音楽ソフト' in tags and re.search(r'ワンツー|上位|トップ\d*|ランキング', ct): tags.remove('音楽ソフト')
         if '配信' in tags and re.search(r'配信リリース|配信シングル|(曲|シングル|アルバム).{0,15}配信', ct) and not re.search(r'Netflix|ABEMA|dアニメ|Prime|U-NEXT|DMM|Hulu|Lemino|ディズニー', ct): tags.remove('配信')
         if '配信' in tags and '放送・公開日' in tags and re.search(r'配信開始|配信スタート|より配信|から配信', ct) and not re.search(r'見放題|独占配信|一挙', ct): tags.remove('配信')   # 新作の配信開始日は放送・公開日（依頼者の分類から）
         if '飲食・食品コラボ' in tags and 'グッズ・アパレル・雑貨' in tags: tags.remove('グッズ・アパレル・雑貨')
+        if '企業・自治体・観光コラボ' in tags and re.search(r'映像|PV|ビジュアル|イラスト|描き下ろし|CM|ムービー|×.{0,25}コラボ|コラボ(決定|始動|企画)', ct) and not re.search(r'カフェ|メニュー|フード|店|ショップ|スタンプラリー|観光|旅|湯|ホテル|鉄道|駅|SA|PA|福袋|グッズ|商品|発売|販売|ナレーション|ガイド', ct):
+            tags = [x for x in tags if x != '企業・自治体・観光コラボ'] + (['コラボビジュアル公開'] if 'コラボビジュアル公開' not in tags else [])   # 作品どうし・作品とイベントのコラボ告知や映像はコラボビジュアル（依頼者の分類から）
+        if 'インタビュー' in tags and '企業・自治体・観光コラボ' in tags: tags.remove('企業・自治体・観光コラボ')
+        if '展覧会' in tags and '展示情報' in tags: tags.remove('展示情報')
+        if 'コメント' in tags and re.search(r'コメントも[\s　]*$', ct) and not re.search(r'コメント(到着|公開|が到着)', ct): tags.remove('コメント')
+        if '主題歌・音楽' in tags and re.search(r'首位|ランクイン|\d+位|スコープ', ct): tags.remove('主題歌・音楽')
         if 'インタビュー' in tags:   # インタビュー記事には、話題に出た配役・監督・主題歌などの項目を付けない（依頼者の分類から、2026-11-18）
             tags = [x for x in tags if x not in ('キャスト公開', 'スタッフ', '原作', 'コラム・解説', '主題歌・音楽', '声優ニュース')]
         if 'フィギュア・模型' in tags and 'グッズ・アパレル・雑貨' in tags and not re.search(r'グッズ|アクリル|ぬいぐるみ|雑貨|アパレル', ct): tags.remove('グッズ・アパレル・雑貨')
