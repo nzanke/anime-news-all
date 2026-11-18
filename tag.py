@@ -96,6 +96,7 @@ TO_SHOW = {'スタッフ': 'スタッフ公開', '主題歌・音楽': '音楽�
            '会社・経営': 'ビジネス', '決算': 'ビジネス', '市場・産業': 'ビジネス', '政策・行政': '政治',
            '各話レビュー・反応': 'コラム', 'コラム・解説': 'コラム', '海外の反応・海外展開': '海外の反応', 'その他': '未分類'}
 SHOW_ORDER = [i for _, its, _ in SHOW for i in its]
+GROUP_OF = {i: g for g, its, _ in SHOW for i in its}
 def show(tags):
     out = []
     for x in tags:
@@ -191,9 +192,12 @@ if True:
         if ('上映会' in tags or '舞台あいさつ' in tags) and '放送・公開日' in tags and not re.search(r'公開日|公開決定|上映決定|上映開始|放送', ct): tags.remove('放送・公開日')
         if 'イベントレポート' in tags and 'コラム・解説' in tags and not re.search(r'コラム|解説|考察|なぜ|分析|読み解く', ct): tags.remove('コラム・解説')
         if 'ランキング・チャート' in tags and ('映画興行' in tags or '発行部数' in tags): tags.remove('ランキング・チャート')   # 興行・部数の順位はそちらに（ランキングは、それらを含まない○位・ランキング）
-        if lab:   # 分類を付けた記事は、その分類＋分類を付けたあとに増えた項目の規則の判定
-            tags = [x for x in lab.get('g', [])] + [x for x in tags if x not in KNOWN and x != 'その他'] or ['その他']
-        e = {'d': r.get('date') or '', 't': r.get('title') or t, 'u': r['url'], 's': r.get('site') or '', 'g': show(tags)}
+        g = show(tags)
+        if lab and lab.get('r') and '全体' not in lab['r']:   # 大カテゴリごとに付けた分類：見た大カテゴリの分だけ差し替え、ほかは規則の判定
+            g = show([x for x in g if GROUP_OF.get(x) not in lab['r']] + [x for x in show(lab.get('g', [])) if GROUP_OF.get(x) in lab['r']])
+        elif lab:   # 全体で付けた分類は、その分類＋分類を付けたあとに増えた項目の規則の判定
+            g = show([x for x in lab.get('g', [])] + [x for x in tags if x not in KNOWN and x != 'その他'])
+        e = {'d': r.get('date') or '', 't': r.get('title') or t, 'u': r['url'], 's': r.get('site') or '', 'g': g}
         if n: e['n'] = n
         items.append(e)
 items.sort(key=lambda e: (e['d'], e['u']), reverse=True)
