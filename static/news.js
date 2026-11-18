@@ -21,7 +21,7 @@
     var dd = m ? +m[3] + '<small>' + WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + '</small>' : '<span class="dq">—</span>';
     var tags = e.g.map(function (i) { return '<span class="tg ti" data-i="' + esc(i) + '">' + esc(i) + '</span>'; }).join('') +
       (e.n ? '<span class="tg tw" data-n="' + esc(e.n) + '">' + esc(e.n) + '</span>' : '') +
-      (e.o ? '<button type="button" class="more" aria-expanded="false">ほか ' + e.o.length + ' 件の見出し ▾</button>' : '');
+      (e.o ? '<button type="button" class="more" aria-expanded="false" title="同じ話題のほかの記事の見出しを広げる">+' + e.o.length + ' ▾</button>' : '');
     var more = e.o ? '<ul class="olist" hidden>' + e.o.map(function (o) { return '<li><a href="' + esc(o[1]) + '" target="_blank" rel="noopener">' + esc(o[2]) + '</a><span class="os">' + esc(o[0]) + '</span></li>'; }).join('') + '</ul>' : '';
     return '<li class="ur sr"><span class="ud">' + dd + '</span>' +
       '<span class="ic" style="--h:' + hue(i0) + '" title="' + esc(i0) + '">' + esc(AB[i0] || '他') + '</span>' +
