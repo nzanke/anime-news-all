@@ -79,6 +79,30 @@ ITEMS = [
     ('コラム', 'コラム・解説', 'コラム|解説|考察|なぜ|理由|まとめ|特集|魅力|トレンド|徹底|分析|今週|1週間|読み解く|背景|とは[?？]?$'),
 ]
 RX = [(g, i, re.compile(r)) for g, i, r in ITEMS]
+
+# ---- 表示するカテゴリ（依頼者の判断、2026-11-18）。上の ITEMS は細かい判定の単位で、表示のときにここでまとめる。
+# 大カテゴリ4つ（作品情報・イベント情報・アイテム情報・コラボ情報）は押すとカテゴリ内の記事が全部出る。
+# 「その他」は小カテゴリを選んだときだけ記事が出る（sub_only）。
+SHOW = [
+    ('作品情報', ['制作決定（テレビアニメ化）', '制作決定（映画化）', '制作決定（その他）', '放送・公開日', '配信', '無料配信', 'テレビ放送', 'キャスト公開', 'スタッフ',
+              '主題歌・音楽', 'アニソン', '映像解禁', 'ビジュアル公開', '原作', 'SNS開設', 'コメント'], False),
+    ('イベント情報', ['舞台あいさつ', '上映会', '再上映', '先行上映', '映画祭', 'ライブ・コンサート', '大型催し・ステージ', '同時視聴会', '特番', '展覧会', '原画展', '展示情報', 'イベントレポート', 'コスプレ'], False),
+    ('アイテム情報', ['フィギュア・模型', 'グッズ・アパレル・雑貨', '劇場販売商品', 'Blu-ray・書籍', '雑誌特集', '入場者特典', 'ゲーム'], False),
+    ('コラボ情報', ['飲食・食品コラボ', '企業・自治体・観光コラボ', 'コラボビジュアル公開', 'コラボグッズ'], False),
+    ('その他', ['受賞・興行', 'ビジネス', '政治', '社会', 'コラム', '訃報', '海外の反応', 'インタビュー', '声優ニュース', '権利・AI', '芸能・スポーツ×アニメ', '未分類'], True),
+]
+TO_SHOW = {'映画興行': '受賞・興行', 'ランキング・チャート': '受賞・興行', '発行部数': '受賞・興行', '受賞・顕彰': '受賞・興行',
+           '会社・経営': 'ビジネス', '決算': 'ビジネス', '市場・産業': 'ビジネス', '政策・行政': '政治',
+           '各話レビュー・反応': 'コラム', 'コラム・解説': 'コラム', '海外の反応・海外展開': '海外の反応', 'その他': '未分類'}
+SHOW_ORDER = [i for _, its, _ in SHOW for i in its]
+def show(tags):
+    out = []
+    for x in tags:
+        y = TO_SHOW.get(x, x)
+        if y in SHOW_ORDER and y not in out: out.append(y)
+    out.sort(key=SHOW_ORDER.index)
+    if len(out) > 1 and '未分類' in out: out.remove('未分類')
+    return out or ['未分類']
 # 先行カット・あらすじの記事は載せない（収集でも外しているが、制作決定ニュースから写した記事もあるので念のため）
 SKIP = re.compile(r'先行カット|先行場面カット|場面カット|あらすじ|先行公開(?:カット|場面)|次回予告|^[^：:]{1,60}[：:]\s*第\s*\d+\s*話\s*[「『]|第\s*\d+\s*話\s*[「『][^」』]+[」』]\s*(?:場面|カット|放送|配信|予告)')
 START = '2026-10-17'   # 集め始めた日（一覧ページに残っている古い記事は載せない）
@@ -163,7 +187,7 @@ if True:
         if 'ランキング・チャート' in tags and ('映画興行' in tags or '発行部数' in tags): tags.remove('ランキング・チャート')   # 興行・部数の順位はそちらに（ランキングは、それらを含まない○位・ランキング）
         if lab:   # 分類を付けた記事は、その分類＋分類を付けたあとに増えた項目の規則の判定
             tags = [x for x in lab.get('g', [])] + [x for x in tags if x not in KNOWN and x != 'その他'] or ['その他']
-        e = {'d': r.get('date') or '', 't': r.get('title') or t, 'u': r['url'], 's': r.get('site') or '', 'g': tags}
+        e = {'d': r.get('date') or '', 't': r.get('title') or t, 'u': r['url'], 's': r.get('site') or '', 'g': show(tags)}
         if n: e['n'] = n
         items.append(e)
 items.sort(key=lambda e: (e['d'], e['u']), reverse=True)
@@ -196,18 +220,13 @@ for c in clusters:
     es = c[1]
     m = max(es, key=lambda x: (x['s'] in ('MANTANWEB', 'アニメイトタイムズ'), len(x['t'])))   # 代表：アニメの専門サイトの、見出しの長いもの
     r = dict(m); r['d'] = min(x['d'] for x in es if x['d']) if any(x['d'] for x in es) else m['d']
-    r['g'] = [i for i in [x for g in ITEMS for x in [g[1]]] + ['その他'] if any(i in x['g'] for x in es)]
-    if len(r['g']) > 1 and 'その他' in r['g']: r['g'].remove('その他')
+    r['g'] = show([x for e in es for x in e['g']])
     if len(es) > 1: r['o'] = [[x['s'], x['u'], x['t']] for x in es if x is not m]; r['c'] = len(es)
     out.append(r)
 items = sorted(out, key=lambda e: (e['d'], e['u']), reverse=True)
-groups = []
-for g, i, _ in ITEMS:
-    if not groups or groups[-1][0] != g: groups.append([g, []])
-    groups[-1][1].append(i)
-groups.append(['その他', ['その他']])
+groups = [[g, its] + ([1] if sub else []) for g, its, sub in SHOW]   # 3つ目が 1 の大カテゴリは、小カテゴリを選んだときだけ記事を出す
 json.dump({'groups': groups, 'items': items}, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 from collections import Counter
 c = Counter(x for e in items for x in e['g'])
 print('書き出し', len(items), '件 →', OUT)
-for g, its in groups: print(' ', g, '：', '、'.join(f'{i} {c[i]}' for i in its))
+for g, its, *_ in groups: print(' ', g, '：', '、'.join(f'{i} {c[i]}' for i in its))

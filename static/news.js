@@ -1,7 +1,7 @@
 // アニメニュース検索：newsall.json を読み、まとまり（色のボタン）・項目（その下のボタン。複数可）・検索・サイトでその場で絞り込む
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, ex = {}, G = {}, GI = {}, groups = [];
+  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, ex = {}, SUB = {}, G = {}, GI = {}, groups = [];
   var HUE = window.HUE || {};
   // 項目の印（一覧の左に出す。記事の最初の項目）
   var AB = { '制作決定（テレビアニメ化）': 'TV', '制作決定（映画化）': '映画', '制作決定（その他）': '決', '放送・公開日': '日', 'キャスト公開': '声', 'SNS開設': 'SNS', 'アニソン': '歌', 'スタッフ': 'ス', '主題歌・音楽': '♪', '映像解禁': '映', 'ビジュアル公開': '絵', '原作': '原', '各話レビュー・反応': '話',
@@ -9,7 +9,7 @@
     'フィギュア・模型': '模', 'グッズ・アパレル・雑貨': '品', '飲食・食品コラボ': '食', '企業・自治体・観光コラボ': '連', 'コラボビジュアル公開': 'コ絵', 'コラボグッズ': 'コ品', 'Blu-ray・書籍': '盤', '入場者特典': '特', '劇場販売商品': '劇', '雑誌特集': '誌', 'ゲーム': 'G',
     '配信': '配', '無料配信': '無', 'テレビ放送': 'TV放', '映画興行': '興', 'ランキング・チャート': '位', '発行部数': '部', '受賞・顕彰': '賞',
     '会社・経営': '社', '決算': '決算', '政策・行政': '政', '権利・AI': '権', '市場・産業': '業', '海外の反応・海外展開': '外', '訃報': '訃', '社会': '会',
-    'インタビュー': '問', 'コメント': '言', '声優ニュース': '優', 'コラム・解説': '記', '芸能・スポーツ×アニメ': '芸', 'その他': '他' };
+    'インタビュー': '問', 'コメント': '言', '声優ニュース': '優', 'コラム・解説': '記', '芸能・スポーツ×アニメ': '芸', '受賞・興行': '賞', 'ビジネス': '業', '政治': '政', 'コラム': '記', '海外の反応': '外', '未分類': '他' };
   var WD = '日月火水木金土';
   function esc(s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function norm(s) { return String(s || '').normalize('NFKC').toLowerCase().replace(/[\s・!！?？:：~〜～\-－「」『』【】]/g, ''); }
@@ -41,7 +41,7 @@
     $('sub').innerHTML = G[grp].map(function (i) {
       return '<button type="button" data-i="' + esc(i) + '" style="--h:' + hue(i) + '"' + (picked[i] ? ' class="on"' : ex[i] ? ' class="ng"' : '') + ' title="1回で絞り込み、2回で除外、3回で元に戻す"' + '>' + esc(i) + '<span class="n"></span></button>';
     }).join('');
-    $('sub').hidden = G[grp].length < 2;
+    $('sub').hidden = G[grp].length < 2 && !SUB[grp];
   }
   function exrow() {   // 除外している項目（まとまりを切り替えても効いたまま。押すと除外をやめる）
     var xs = Object.keys(ex);
@@ -63,10 +63,10 @@
       var i = b.getAttribute('data-i'); b.querySelector('.n').textContent = ' ' + (ex[i] ? base0.filter(function (e) { return !grp || inGroup(e, grp); }) : inG).filter(function (e) { return e.g.indexOf(i) >= 0; }).length.toLocaleString();
     });
     var ps = Object.keys(picked);
-    res = ps.length ? inG.filter(function (e) { return ps.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : inG;
+    res = (grp && SUB[grp] && !ps.length) ? [] : ps.length ? inG.filter(function (e) { return ps.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : inG;
     if ($('old').checked) res = res.slice().reverse();
     if ($('big').checked) res = res.slice().sort(function (a, b) { return (b.c || 1) - (a.c || 1); });
-    $('count').textContent = res.length.toLocaleString() + ' 件 / 全 ' + all.length.toLocaleString() + ' 件';
+    $('count').textContent = (grp && SUB[grp] && !ps.length) ? '小カテゴリを選ぶと記事が出ます' : res.length.toLocaleString() + ' 件 / 全 ' + all.length.toLocaleString() + ' 件';
     render(false);
     var qs = [];
     if ($('q').value) qs.push('q=' + encodeURIComponent($('q').value));
@@ -82,7 +82,7 @@
   }
   fetch(window.NEWS).then(function (r) { return r.json(); }).then(function (j) {
     groups = j.groups || [];
-    groups.forEach(function (x) { G[x[0]] = x[1]; x[1].forEach(function (i) { GI[i] = x[0]; }); });
+    groups.forEach(function (x) { G[x[0]] = x[1]; if (x[2]) SUB[x[0]] = 1; x[1].forEach(function (i) { GI[i] = x[0]; }); });
     all = j.items || [];
     all.forEach(function (e) { e._t = norm([e.t, e.n, e.s].concat((e.o || []).map(function (o) { return o[0] + ' ' + o[2]; })).join(' ')); });
     var p = new URLSearchParams(location.search);
