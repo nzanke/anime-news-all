@@ -1,11 +1,12 @@
 name: サイトを組み立てて公開
-# 一覧のデータ（newsall.json）は、毎日の収集（非公開の anime-database の newsall.yml）が公開の anime-world に置くものを取ってくる。
-# 収集は日本時間18時30分の予定だが GitHub の混み具合で遅れるため、3時間ごとに取り直して組み立てる。
+# 30分ごとに、RSS（feeds.json）の新しい見出しを足し（rss.py）、MANTANWEB・アニメイトタイムズの見出しの一覧（非公開の anime-database が
+# 毎日18時30分に作って公開の anime-world に置く newsall_sites.json）を取ってきて、振り分け（tag.py）→ 組み立て → 公開する。
+# 公開リポジトリなので実行時間は無料。GitHub の混み具合で数分〜数十分遅れることがある。
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '23 */3 * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -24,14 +25,21 @@ jobs:
           python-version: '3.12'
       - name: 使っていない gh-pages の枝が残っていれば消す
         run: git push origin --delete gh-pages || true
-      - name: 最新の一覧データを取ってくる
+      - name: 各サイトの見出しの一覧を取ってくる
         run: |
-          curl -fsSL https://raw.githubusercontent.com/nzanke/anime-world/main/data/newsall.json -o /tmp/newsall.json && python3 -c "import json;json.load(open('/tmp/newsall.json'))" && cp /tmp/newsall.json data/newsall.json || echo '公開用の一覧がまだないので、手元のものを使います'
-          if ! git diff --quiet data/newsall.json; then
+          curl -fsSL https://raw.githubusercontent.com/nzanke/anime-world/main/data/newsall_sites.json -o /tmp/s.json && python3 -c "import json;json.load(open('/tmp/s.json'))" && cp /tmp/s.json data/newsall_sites.json || echo '各サイトの見出しの一覧を取れなかったので、手元のものを使います'
+      - name: RSS を読む
+        run: python3 rss.py
+      - name: 振り分けて一覧を作る
+        run: python3 tag.py
+      - name: データを保存する
+        run: |
+          git add data
+          if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "一覧データを更新" data/newsall.json
-            git push
+            git commit -q -m "一覧データを更新"
+            for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
           fi
       - run: python3 build.py
       - uses: actions/upload-pages-artifact@v3
