@@ -109,7 +109,7 @@ def records():
     if os.path.exists(p):
         for l in open(p, encoding='utf-8'):
             x = json.loads(l)
-            yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'feed': x.get('feed', ''), 'ceek_items': FI.get(x.get('feed'), {}).get('items', []), 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx'), 'lw': x.get('lw'), 'rss': 1}
+            yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'feed': x.get('feed', ''), 'ceek_items': FI.get(x.get('feed'), {}).get('items', []), 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx'), 'lw': x.get('lw'), 'lv': x.get('lv'), 'rss': 1}
 if True:
     for r in records():
         cu = canon(r['url'])   # 同じ記事の重なり（自動取得と RSS、RSS どうし）を1本にする。先に読む自動取得のほうを残す
@@ -122,7 +122,7 @@ if True:
         if r.get('date'): SEEN_T[tk] = _day(r['date'])
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
-        if r.get('rss') and not is_anime_title(t) and not r.get('lw'): continue   # RSS：見出しにアニメの語・作品タイトル・アニメの話題の語がなく、書き出しにも作品タイトルがない（rules.py）
+        if r.get('rss') and not is_anime_title(t) and not (r.get('lw') and (r.get('lv') or 0) >= 5): continue   # lv5 より前の書き出し判定は地の文で拾っていたので使わない   # RSS：見出しにアニメの語・作品タイトル・アニメの話題の語がなく、書き出しにも作品タイトルがない（rules.py）
         if not r.get('anime') and not ANIME.search(t): continue
         if NOT_ANIME.search(t) and not ANIME.search(t): continue   # 特撮・スポーツ・株など（rules.py の NOT_ANIME）   # 見出しにアニメの語がない（anime_title の RSS）。RSS は「アニメ」で検索したものなので書き出しにはほぼ必ずアニメの語があり、手がかりにならない   # アニメ欄以外の一覧（映画欄）の実写映画など
         if 'アニメ!アニメ!' in nf(r.get('site')) and WHERE.search(t): continue

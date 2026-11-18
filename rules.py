@@ -92,8 +92,12 @@ _T = sorted(_load_titles(), key=len, reverse=True)
 WORKS = re.compile('|'.join(re.escape(t) for t in _T)) if _T else re.compile(r'(?!)')
 # アニメの話題だとわかる語（作品名が出ない記事のため）。マンガだけの記事は「載せない」が多かったので漫画・マンガは入れない
 CTX = re.compile(r'二次元|オタク|コスプレ|入場者特典|来場者特典|入プレ|フィギュア|聖地巡礼|アキバ|秋葉原|キャラクター(商品|グッズ)|原作者|作画|声優')
+# 作品タイトルは「」『』の中だけで拾う（依頼者の判断、2026-11-18。地の文の普通の言葉と重なるのを防ぐ）
+BR = re.compile(r'[「『]([^」』]{1,80})[」』]')
+def in_brackets(t):
+    return ' / '.join(BR.findall(t))
 def is_anime_title(t):
-    t = nf(t); return bool(ANIME.search(t) or WORKS.search(t) or CTX.search(t))
+    t = nf(t); return bool(ANIME.search(t) or WORKS.search(in_brackets(t)) or CTX.search(t))
 
 # 見出しにあったら載せない語（依頼者の分類で、ほぼすべて「載せない」だったもの。2026-11-18。見出しにアニメの語があれば外さない。ウルトラマンのソフビは「載せる」だったので入れない）
 NOT_ANIME = re.compile(r'仮面ライダー|スーパー戦隊|超英雄祭|戦隊ヒーロー|特撮(?!.{0,10}アニメ)|実写(映画|ドラマ)(?!.{0,10}アニメ)|トミカ|プラレール|卓球|WTT|プロ野球|ドラフト|株価|株前場|株後場|利上げ|金利')
@@ -109,7 +113,7 @@ LEAD_RX = {
     '訃報': r'死去|亡くなった|逝去|訃報|永眠',
 }
 LEAD_ITEMS = list(LEAD_RX)
-LEAD_VERSION = 4   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
+LEAD_VERSION = 5   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
 _LRX = [(i, re.compile(r)) for i, r in LEAD_RX.items()]
 
 def lead(text):
@@ -123,6 +127,6 @@ def lead_tags(text):
     out = {'lt': [i for i, rx in _LRX if rx.search(t)], 'lv': LEAD_VERSION}
     if ANIME.search(t): out['la'] = 1
     if LIVE.search(t): out['lx'] = 1
-    m = WORKS.search(t) or CTX.search(t)
+    m = WORKS.search(in_brackets(t)) or CTX.search(t)
     if m: out['lw'] = m.group(0)   # 当たった語そのものを残す（本文ではなく判定の理由。弾きすぎ・残しすぎを調べるため）   # 書き出しに作品タイトル・アニメの話題の語（RSS の書き出しには検索の「アニメ」がほぼ必ず入るので、その語は数えない）
     return out
