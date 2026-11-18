@@ -108,6 +108,8 @@ SKIP = re.compile(r'先行カット|先行場面カット|場面カット|あら
 START = '2026-10-17'   # 集め始めた日（一覧ページに残っている古い記事は載せない）
 # アニメイトタイムズの読者アンケート系の記事（募集・結果発表）は載せない（依頼者の判断、2026-11-17）。作品の公式の人気投票は残す
 SURVEY = re.compile(r'アニメイトタイムズでは[^。]{0,80}?(アンケート|募集)')   # 見出しの「アンケート」ではなく、本文の「アニメイトタイムズでは…アンケートを実施／…を大募集」で決める（別の文脈のアンケートは残す）
+# アニメ！アニメ！の「〇〇の配信はどこで見れる？」系の記事は載せない（依頼者の判断、2026-11-18）
+WHERE = re.compile(r'どこで(見|観)(れ|られ|る)|どこで視聴|(見|観)れる(サブスク|配信)|見放題で(見|観)る方法')
 ANIME = re.compile(r'アニメ|劇場版|声優|OVA|OAD|Vtuber|VTuber|ジブリ|漫画家|マンガ家|特撮')
 
 def nf(s): return unicodedata.normalize('NFKC', s or '')
@@ -156,6 +158,7 @@ if True:
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
         if not r.get('anime') and not ANIME.search(t + nf(r.get('body', ''))[:400]): continue   # アニメ欄以外の一覧（映画欄）の実写映画など
+        if 'アニメ!アニメ!' in nf(r.get('site')) and WHERE.search(t): continue
         lab = LABELS.get(key(r['url']))
         if lab and lab.get('x'): continue   # 「載せない」と分類された記事
         n = work(r, t)
