@@ -122,6 +122,15 @@ ANIME = re.compile(r'アニメ|劇場版|声優|OVA|OAD|Vtuber|VTuber|ジブリ|
 
 def nf(s): return unicodedata.normalize('NFKC', s or '')
 
+def canon(u):
+    """同じ記事かどうかを見るためのリンク：http/https・www・末尾の / の違いと、追跡用の値（utm_ や ?c= や時事通信の &g= など）を外す"""
+    from urllib.parse import urlsplit, parse_qsl, urlencode
+    p = urlsplit((u or '').strip())
+    q = [(k, v) for k, v in parse_qsl(p.query) if not (k.startswith('utm_') or k in DROP_Q)]
+    return re.sub(r'^www\.', '', p.netloc.lower()) + p.path.rstrip('/') + ('?' + urlencode(sorted(q)) if q else '')
+DROP_Q = {'c', 'g', 'from', 'ref', 'rf', 'fbclid', 'gclid', 'display', 'page', 'cx_testId', 'cx_testVariant', 'cx_artPos', 'via', 'source', 'share'}
+
+
 def key(u):
     """記事のリンクから番号を作る（分類づけページの key と同じ作り方：UTF-16 の文字ごとに h=h*31+c を32ビットで）"""
     h = 0
@@ -147,6 +156,11 @@ def work(r, t):
     return re.sub(r'^(TVアニメ|テレビアニメ|劇場版|劇場アニメ|映画|アニメ)\s*', '', m.group(1)).replace('「', '').replace('」', ' ').strip() if m else ''
 
 items, seen = [], set()
+SEEN_T = {}
+def _day(d):
+    import datetime
+    try: return datetime.date.fromisoformat(d).toordinal()
+    except Exception: return 0
 def records():
     p = os.path.join(HERE, 'data', 'newsall_sites.json')
     if os.path.exists(p):
@@ -160,9 +174,14 @@ def records():
             yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'ceek_items': FI.get(x.get('feed'), {}).get('items', [])}
 if True:
     for r in records():
-        if r['url'] in seen: continue
-        seen.add(r['url'])
+        cu = canon(r['url'])   # 同じ記事の重なり（自動取得と RSS、RSS どうし）を1本にする。先に読む自動取得のほうを残す
+        if cu in seen: continue
+        seen.add(cu)
         t = nf(r.get('title') or r.get('list_title'))
+        tk = (re.sub(r'\s', '', nf(r.get('site'))), re.sub(r'[\s　]', '', t))   # 同じサイトで見出しがまったく同じ記事も、前後3日以内なら同じ記事
+        dd = SEEN_T.get(tk)
+        if dd is not None and r.get('date') and abs(_day(r['date']) - dd) <= 3: continue
+        if r.get('date'): SEEN_T[tk] = _day(r['date'])
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
         if not r.get('anime') and not ANIME.search(t + nf(r.get('body', ''))[:400]): continue   # アニメ欄以外の一覧（映画欄）の実写映画など
