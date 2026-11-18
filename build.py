@@ -27,7 +27,7 @@ HUE = {'作品の動き': 250, 'イベント': 25, '商品・コラボ': 345, '�
 GROUPS = NEWS['groups']
 items_txt = ''.join(f'<p><b>{esc(g)}</b>：{"、".join(esc(i) for i in its)}</p>' for g, its in GROUPS if g != 'その他')
 ABOUT = f'''<details class="about"><summary><span class="qi">?</span>このサイトについて</summary><div class="aboutbox"><p class="abh">このサイトについて</p>
-<p>アニメのニュースを毎日集め、項目ごとに絞り込めるようにした一覧です。上の色のボタンでまとまりを選ぶと、その下に細かい項目が出ます（項目は複数選べます）。1本の記事が複数の項目に入ることがあります。どの項目にも当たらない記事は「その他」です。</p>
+<p>アニメのニュースを毎日集め、項目ごとに絞り込めるようにした一覧です。上の色のボタンでまとまりを選ぶと、その下に細かい項目が出ます。項目は1回押すとその項目で絞り込み（複数選べます）、2回押すとその項目を除外、3回押すと元に戻ります。除外した項目は、まとまりを切り替えても効いたままです（「除外中」の項目を押すと除外をやめます）。1本の記事が複数の項目に入ることがあります。どの項目にも当たらない記事は「その他」です。</p>
 {items_txt}
 <p><b>同じ話題</b>：違うサイトが同じ話題を伝えた記事は1行にまとめ、伝えた記事の数を右に出しています（見出しの似ている度合いで機械的にまとめているため、誤りが混じることがあります）。「伝えた記事の多い順」で、多くのサイトが伝えた話題から並べます。</p>
 <p><b>検索</b>：スペースで区切ると、すべての語を含むものだけを出します。記事の下の作品名を押すと、その作品名で検索します。</p>
@@ -41,6 +41,7 @@ btns = ''.join(f'<button type="button" data-g="{esc(g)}" style="--h:{h}"{" class
                for g, t, h in [('', 'すべて', 250)] + [(g, g, HUE.get(g, 70)) for g, _ in GROUPS])
 body = f'''<div class="seg" id="seg">{btns}</div>
 <div id="sub" hidden></div>
+<div id="exrow" hidden></div>
 <div class="sbar"><input type="search" id="q" placeholder="作品名・題名で検索">
 <select id="site"><option value="">すべてのサイト</option>{"".join(f'<option>{esc(x)}</option>' for x in nsites)}</select></div>
 <div class="opts"><label><input type="checkbox" id="old"> 古い順</label><label><input type="checkbox" id="big"> 伝えた記事の多い順</label></div>

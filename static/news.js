@@ -1,14 +1,14 @@
 // アニメニュース検索：newsall.json を読み、まとまり（色のボタン）・項目（その下のボタン。複数可）・検索・サイトでその場で絞り込む
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, G = {}, GI = {}, groups = [];
+  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, ex = {}, G = {}, GI = {}, groups = [];
   var HUE = window.HUE || {};
   // 項目の印（一覧の左に出す。記事の最初の項目）
-  var AB = { '制作決定（テレビアニメ化）': 'TV', '制作決定（その他）': '決', '放送・公開日': '日', 'キャスト': '声', 'スタッフ': 'ス', '主題歌・音楽': '♪', 'PV・映像': 'PV', 'ビジュアル公開': '絵', '原作': '原', '各話レビュー・反応': '話',
-    '舞台あいさつ': '壇', '上映会': '映', '映画祭': '祭', 'ライブ・コンサート': 'LV', '大型催し・ステージ': '催', '展示・原画展・ミュージアム': '展', 'コスプレ': 'コ',
+  var AB = { '制作決定（テレビアニメ化）': 'TV', '制作決定（映画化）': '映画', '制作決定（その他）': '決', '放送・公開日': '日', 'キャスト': '声', 'スタッフ': 'ス', '主題歌・音楽': '♪', 'PV・予告': 'PV', '映像公開': '映', 'ビジュアル公開': '絵', '原作': '原', '各話レビュー・反応': '話',
+    '舞台あいさつ': '壇', '上映会': '上', '先行上映': '先', '映画祭': '祭', 'ライブ・コンサート': 'LV', '大型催し・ステージ': '催', '特番': '番', '展覧会': '展', '原画展': '原画', 'コスプレ': 'コ',
     'フィギュア・模型': '模', 'グッズ・アパレル・雑貨': '品', '飲食・食品コラボ': '食', '企業・自治体・観光コラボ': '連', 'Blu-ray・書籍': '盤', '入場者特典': '特', 'ゲーム': 'G',
-    '配信': '配', '映画興行': '興', 'ランキング・チャート': '位', '発行部数': '部', '受賞・顕彰': '賞',
-    '会社・経営': '社', '政策・行政': '政', '権利・AI': '権', '市場・産業': '業', '海外の反応・海外展開': '外', '訃報': '訃',
+    '配信': '配', '無料配信': '無', '映画興行': '興', 'ランキング・チャート': '位', '発行部数': '部', '受賞・顕彰': '賞',
+    '会社・経営': '社', '決算': '決算', '政策・行政': '政', '権利・AI': '権', '市場・産業': '業', '海外の反応・海外展開': '外', '訃報': '訃',
     'インタビュー': '問', 'コメント': '言', 'コラム・解説': '記', '芸能・スポーツ×アニメ': '芸', 'その他': '他' };
   var WD = '日月火水木金土';
   function esc(s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -39,20 +39,28 @@
   function subs() {   // 選んだまとまりの項目ボタン
     if (!grp) { $('sub').hidden = true; $('sub').innerHTML = ''; return; }
     $('sub').innerHTML = G[grp].map(function (i) {
-      return '<button type="button" data-i="' + esc(i) + '" style="--h:' + hue(i) + '"' + (picked[i] ? ' class="on"' : '') + '>' + esc(i) + '<span class="n"></span></button>';
+      return '<button type="button" data-i="' + esc(i) + '" style="--h:' + hue(i) + '"' + (picked[i] ? ' class="on"' : ex[i] ? ' class="ng"' : '') + ' title="1回で絞り込み、2回で除外、3回で元に戻す"' + '>' + esc(i) + '<span class="n"></span></button>';
     }).join('');
     $('sub').hidden = G[grp].length < 2;
+  }
+  function exrow() {   // 除外している項目（まとまりを切り替えても効いたまま。押すと除外をやめる）
+    var xs = Object.keys(ex);
+    $('exrow').hidden = !xs.length;
+    $('exrow').innerHTML = xs.length ? '除外中：' + xs.map(function (i) { return '<button type="button" data-i="' + esc(i) + '" style="--h:' + hue(i) + '">' + esc(i) + ' ×</button>'; }).join('') : '';
   }
   function inGroup(e, g) { return e.g.some(function (i) { return GI[i] === g; }); }
   function search() {
     var terms = $('q').value.split(/\s+/).map(norm).filter(Boolean), site = $('site').value;
-    var base = all.filter(function (e) { return (!site || e.s === site || (e.o || []).some(function (o) { return o[0] === site; })) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
+    var base0 = all.filter(function (e) { return (!site || e.s === site || (e.o || []).some(function (o) { return o[0] === site; })) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
+    var xs = Object.keys(ex);
+    var base = xs.length ? base0.filter(function (e) { return !xs.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : base0;
+    exrow();
     [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
       var g = b.getAttribute('data-g'); b.querySelector('.n').textContent = ' ' + (g ? base.filter(function (e) { return inGroup(e, g); }).length : base.length).toLocaleString();
     });
     var inG = grp ? base.filter(function (e) { return inGroup(e, grp); }) : base;
     [].forEach.call(document.querySelectorAll('#sub button'), function (b) {
-      var i = b.getAttribute('data-i'); b.querySelector('.n').textContent = ' ' + inG.filter(function (e) { return e.g.indexOf(i) >= 0; }).length.toLocaleString();
+      var i = b.getAttribute('data-i'); b.querySelector('.n').textContent = ' ' + (ex[i] ? base0.filter(function (e) { return !grp || inGroup(e, grp); }) : inG).filter(function (e) { return e.g.indexOf(i) >= 0; }).length.toLocaleString();
     });
     var ps = Object.keys(picked);
     res = ps.length ? inG.filter(function (e) { return ps.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : inG;
@@ -64,6 +72,7 @@
     if ($('q').value) qs.push('q=' + encodeURIComponent($('q').value));
     if (grp) qs.push('g=' + encodeURIComponent(grp));
     if (ps.length) qs.push('i=' + encodeURIComponent(ps.join(',')));
+    if (xs.length) qs.push('x=' + encodeURIComponent(xs.join(',')));
     try { history.replaceState(null, '', qs.length ? '?' + qs.join('&') : location.pathname); } catch (x) {}
   }
   function setGroup(g) {
@@ -78,6 +87,7 @@
     all.forEach(function (e) { e._t = norm([e.t, e.n, e.s].concat((e.o || []).map(function (o) { return o[0] + ' ' + o[2]; })).join(' ')); });
     var p = new URLSearchParams(location.search);
     if (p.get('q')) $('q').value = p.get('q');
+    (p.get('x') || '').split(',').forEach(function (i) { if (GI[i]) ex[i] = 1; });
     if (p.get('g') && G[p.get('g')]) { setGroup(p.get('g')); (p.get('i') || '').split(',').forEach(function (i) { if (GI[i] === grp) picked[i] = 1; }); subs(); }
     search();
   });
@@ -91,14 +101,18 @@
   $('sub').addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
     var i = b.getAttribute('data-i');
-    if (picked[i]) delete picked[i]; else picked[i] = 1;
-    b.classList.toggle('on', !!picked[i]); search();
+    if (picked[i]) { delete picked[i]; ex[i] = 1; } else if (ex[i]) delete ex[i]; else picked[i] = 1;   // 1回で絞り込み、2回で除外、3回で元に戻す
+    b.classList.toggle('on', !!picked[i]); b.classList.toggle('ng', !!ex[i]); search();
   });
   $('list').addEventListener('click', function (ev) {   // 記事の下の項目・作品名を押すと、その項目だけ／その作品名で検索
     var t = ev.target.closest('.tg'); if (!t) return;
     if (t.getAttribute('data-n')) { $('q').value = t.getAttribute('data-n'); search(); window.scrollTo(0, 0); return; }
     var i = t.getAttribute('data-i'); if (!i) return;
-    setGroup(GI[i]); picked = {}; picked[i] = 1; subs(); search(); window.scrollTo(0, 0);
+    setGroup(GI[i]); picked = {}; picked[i] = 1; delete ex[i]; subs(); search(); window.scrollTo(0, 0);
+  });
+  $('exrow').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    delete ex[b.getAttribute('data-i')]; subs(); search();
   });
   $('more').addEventListener('click', function () { render(true); });
 })();
