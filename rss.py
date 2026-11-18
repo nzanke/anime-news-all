@@ -37,7 +37,7 @@ for f in json.load(open(os.path.join(HERE, 'feeds.json'), encoding='utf-8'))['fe
         c = canon(u)
         if c in idx:
             if lt and rows[idx[c]].get('lv') != LEAD_VERSION:   # 判定がない・古い規則の判定なら付け直す
-                for kk in ('lt', 'la', 'lx'): rows[idx[c]].pop(kk, None)
+                for kk in ('lt', 'la', 'lx', 'lw', 'lv'): rows[idx[c]].pop(kk, None)
                 rows[idx[c]].update(lt); filled += 1
             continue
         m = re.match(r'(.*?)\s*[(（]([^()（）]{1,30})[)）]\s*$', t)

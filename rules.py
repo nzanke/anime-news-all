@@ -78,6 +78,23 @@ RX = [(g, i, re.compile(r)) for g, i, r in ITEMS]
 
 # アニメに関係する記事かを見る語（見出しか書き出しにあれば関係あり）。特撮は依頼者の分類で載せないが多いので入れない（2026-11-18）
 ANIME = re.compile(r'アニメ|劇場版|声優|OVA|OAD|Vtuber|VTuber|ジブリ|漫画家|マンガ家')
+# アニメの作品タイトルと呼び名（data/titles.json）。見出しにアニメの語も作品タイトルもなく、書き出しにも作品タイトルがない RSS の記事は載せない（依頼者の判断、2026-11-18）
+def _load_titles():
+    import json, os
+    try:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'titles.json')
+        return json.load(open(p, encoding='utf-8'))['titles']
+    except Exception:   # 非公開側が rules.py を URL から読むとき
+        import urllib.request
+        try: return json.loads(urllib.request.urlopen('https://raw.githubusercontent.com/nzanke/anime-news-all/main/data/titles.json', timeout=30).read().decode('utf-8'))['titles']
+        except Exception: return []
+_T = sorted(_load_titles(), key=len, reverse=True)
+WORKS = re.compile('|'.join(re.escape(t) for t in _T)) if _T else re.compile(r'(?!)')
+# アニメの話題だとわかる語（作品名が出ない記事のため）。マンガだけの記事は「載せない」が多かったので漫画・マンガは入れない
+CTX = re.compile(r'二次元|オタク|コスプレ|入場者特典|来場者特典|入プレ|フィギュア|聖地巡礼|アキバ|秋葉原|キャラクター(商品|グッズ)|原作者|作画|声優')
+def is_anime_title(t):
+    t = nf(t); return bool(ANIME.search(t) or WORKS.search(t) or CTX.search(t))
+
 # 見出しにあったら載せない語（依頼者の分類で、ほぼすべて「載せない」だったもの。2026-11-18。見出しにアニメの語があれば外さない。ウルトラマンのソフビは「載せる」だったので入れない）
 NOT_ANIME = re.compile(r'仮面ライダー|スーパー戦隊|超英雄祭|戦隊ヒーロー|特撮(?!.{0,10}アニメ)|実写(映画|ドラマ)(?!.{0,10}アニメ)|トミカ|プラレール|卓球|WTT|プロ野球|ドラフト|株価|株前場|株後場|利上げ|金利')
 # 書き出しに出たら記録しておく語（実写・特撮など。載せる・載せないの判定の手がかり）
@@ -92,7 +109,7 @@ LEAD_RX = {
     '訃報': r'死去|亡くなった|逝去|訃報|永眠',
 }
 LEAD_ITEMS = list(LEAD_RX)
-LEAD_VERSION = 2   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
+LEAD_VERSION = 3   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
 _LRX = [(i, re.compile(r)) for i, r in LEAD_RX.items()]
 
 def lead(text):
@@ -106,4 +123,5 @@ def lead_tags(text):
     out = {'lt': [i for i, rx in _LRX if rx.search(t)], 'lv': LEAD_VERSION}
     if ANIME.search(t): out['la'] = 1
     if LIVE.search(t): out['lx'] = 1
+    if WORKS.search(t) or CTX.search(t): out['lw'] = 1   # 書き出しに作品タイトル・アニメの話題の語（RSS の書き出しには検索の「アニメ」がほぼ必ず入るので、その語は数えない）
     return out

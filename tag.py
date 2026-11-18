@@ -15,7 +15,7 @@ import glob, json, os, re, sys, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'data', 'newsall.json')
-from rules import N, ITEMS, RX, ANIME, LIVE, LEAD_ITEMS, NOT_ANIME, nf   # 規則は rules.py に（rss.py・非公開側の書き出しの判定と共通）
+from rules import N, ITEMS, RX, ANIME, LIVE, LEAD_ITEMS, NOT_ANIME, nf, is_anime_title   # 規則は rules.py に（rss.py・非公開側の書き出しの判定と共通）
 
 # ---- 表示するカテゴリ（依頼者の判断、2026-11-18）。上の ITEMS は細かい判定の単位で、表示のときにここでまとめる。
 # 大カテゴリ4つ（新作情報・イベント情報・アイテム情報・コラボ情報）は押すとカテゴリ内の記事が全部出る。
@@ -109,7 +109,7 @@ def records():
     if os.path.exists(p):
         for l in open(p, encoding='utf-8'):
             x = json.loads(l)
-            yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'feed': x.get('feed', ''), 'ceek_items': FI.get(x.get('feed'), {}).get('items', []), 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx')}
+            yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 0 if FI.get(x.get('feed'), {}).get('anime_title') else 1, 'feed': x.get('feed', ''), 'ceek_items': FI.get(x.get('feed'), {}).get('items', []), 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx'), 'lw': x.get('lw'), 'rss': 1}
 if True:
     for r in records():
         cu = canon(r['url'])   # 同じ記事の重なり（自動取得と RSS、RSS どうし）を1本にする。先に読む自動取得のほうを残す
@@ -122,6 +122,7 @@ if True:
         if r.get('date'): SEEN_T[tk] = _day(r['date'])
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
+        if r.get('rss') and not is_anime_title(t) and not r.get('lw'): continue   # RSS：見出しにアニメの語・作品タイトル・アニメの話題の語がなく、書き出しにも作品タイトルがない（rules.py）
         if not r.get('anime') and not ANIME.search(t): continue
         if NOT_ANIME.search(t) and not ANIME.search(t): continue   # 特撮・スポーツ・株など（rules.py の NOT_ANIME）   # 見出しにアニメの語がない（anime_title の RSS）。RSS は「アニメ」で検索したものなので書き出しにはほぼ必ずアニメの語があり、手がかりにならない   # アニメ欄以外の一覧（映画欄）の実写映画など
         if 'アニメ!アニメ!' in nf(r.get('site')) and WHERE.search(t): continue
