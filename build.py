@@ -13,6 +13,8 @@ if os.path.exists(OUT): shutil.rmtree(OUT)
 os.makedirs(OUT)
 for f in ('style.css', 'news.js'): shutil.copy(D('static', f), OUT)
 open(os.path.join(OUT, '.nojekyll'), 'w').close()
+# 過去の版（archive/ の下をそのまま _site/old/ に置く。更新しない）
+if os.path.isdir(D('archive')): shutil.copytree(D('archive'), os.path.join(OUT, 'old'))
 NEWS = json.load(open(D('data', 'newsall.json'), encoding='utf-8'))
 nj = json.dumps(NEWS, ensure_ascii=False, separators=(',', ':'))
 open(os.path.join(OUT, 'newsall.json'), 'w', encoding='utf-8').write(nj)
@@ -31,7 +33,7 @@ ABOUT = f'''<details class="about"><summary><span class="qi">?</span>このサ�
 {items_txt}
 <p><b>同じ話題</b>：違うサイトが同じ話題を伝えた記事は1行にまとめ、伝えた記事の数を右に出しています（見出しの似ている度合いで機械的にまとめているため、誤りが混じることがあります）。「伝えた記事の多い順」で、多くのサイトが伝えた話題から並べます。</p>
 <p><b>検索</b>：スペースで区切ると、すべての語を含むものだけを出します。記事の下の作品名を押すと、その作品名で検索します。</p>
-<p><b>集めている記事</b>：MANTANWEB と アニメイトタイムズ のアニメの記事（先行カット・あらすじの記事は除いています）と、新聞各紙などのアニメに関する記事（訃報・人事など）。毎日夕方に新着を集めます。過去の記事は2026年10月17日から集めています。</p>
+<p><b>集めている記事</b>：ニュースサイトの RSS で見つけた、新聞各紙・ニュースサイトのアニメに関する記事。30分ごとに新着を集めます。</p>
 <p><b>載せているもの</b>：記事の日付・見出し・リンクと、見出しから読み取った作品名と項目。記事の本文は載せていません。項目の読み取りは見出しの言葉から決まった規則で機械的に行っているため、誤りが混じることがあります。</p>
 <p>アニメの制作決定と放送日・公開日だけを見るなら <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>。</p>
 </div></details>'''
@@ -58,7 +60,7 @@ doc = f'''<!DOCTYPE html>
 <main>
 {body}
 </main>
-<footer class="site"><p>MANTANWEB・アニメイトタイムズ・新聞各紙などの記事の見出しとリンクを毎日集めて並べています（記事の本文は載せていません）。制作決定は <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>、インタビュー記事は <a href="https://nzanke.github.io/anime-world/">アニメインタビュー検索</a>。</p></footer>
+<footer class="site"><p>新聞各紙・ニュースサイトのアニメに関する記事の見出しとリンクを30分ごとに集めて並べています（記事の本文は載せていません）。<a href="old/2026-11-18/">2026年11月18日までの版</a>。制作決定は <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>、インタビュー記事は <a href="https://nzanke.github.io/anime-world/">アニメインタビュー検索</a>。</p></footer>
 </div><script>window.NEWS="newsall.json?v={NEWS_V}";window.HUE={json.dumps(HUE, ensure_ascii=False)}</script><script src="news.js?v={NJS_V}"></script><script data-goatcounter="https://nzanke.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script></body></html>
 '''
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(doc)

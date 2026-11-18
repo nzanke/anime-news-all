@@ -1,0 +1,118 @@
+// アニメニュース検索：newsall.json を読み、まとまり（色のボタン）・項目（その下のボタン。複数可）・検索・サイトでその場で絞り込む
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, ex = {}, SUB = {}, G = {}, GI = {}, groups = [];
+  var HUE = window.HUE || {};
+  // 項目の印（一覧の左に出す。記事の最初の項目）
+  var AB = { '制作決定（テレビアニメ化）': 'TV', '制作決定（映画化）': '映画', '制作決定（その他）': '決', '放送・公開日': '日', 'キャスト公開': '声', 'SNS開設': 'SNS', 'アニソン': '歌', 'スタッフ': 'ス', '主題歌・音楽': '♪', '映像解禁': '映', 'ビジュアル公開': '絵', '原作': '原', '各話レビュー・反応': '話',
+    '舞台あいさつ': '壇', '上映会': '上', '再上映': '再', '先行上映': '先', '映画祭': '祭', 'ライブ・コンサート': 'LV', '大型催し・ステージ': '催', '特番': '番', '同時視聴会': '視', 'イベントレポート': 'レポ', '展覧会': '展', '原画展': '原画', '展示情報': '示', 'コスプレ': 'コ',
+    'フィギュア・模型': '模', 'グッズ・アパレル・雑貨': '品', '飲食・食品コラボ': '食', '企業・自治体・観光コラボ': '連', 'コラボビジュアル公開': 'コ絵', 'コラボグッズ': 'コ品', 'Blu-ray・書籍': '盤', '入場者特典': '特', '劇場販売商品': '劇', '雑誌特集': '誌', 'ゲーム': 'G',
+    '配信': '配', '無料配信': '無', 'テレビ放送': 'TV放', '映画興行': '興', 'ランキング・チャート': '位', '発行部数': '部', '受賞・顕彰': '賞',
+    '会社・経営': '社', '決算': '決算', '政策・行政': '政', '権利・AI': '権', '市場・産業': '業', '海外の反応・海外展開': '外', '訃報': '訃', '社会': '会',
+    'インタビュー': '問', 'コメント': '言', '声優ニュース': '優', 'コラム・解説': '記', '芸能・スポーツ×アニメ': '芸', '受賞・興行': '賞', 'ビジネス': '業', '政治': '政', 'コラム': '記', '海外の反応': '外', '未分類': '他', 'コメント公開': '言', 'スタッフ公開': 'ス', '音楽情報公開': '♪', '再放送・再配信': '再放', 'コラボビジュアル': 'コ絵', 'その他コラボ': 'コラ', '紙媒体': '紙', 'ビデオソフト': '盤', '音楽ソフト': 'CD', 'くじ': 'くじ', 'フェア・ポップアップ': '店', 'その他アイテム': '品' };
+  var WD = '日月火水木金土';
+  function esc(s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function norm(s) { return String(s || '').normalize('NFKC').toLowerCase().replace(/[\s・!！?？:：~〜～\-－「」『』【】]/g, ''); }
+  function hue(i) { return HUE[GI[i]] || 70; }
+  function row(e) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(e.d || ''), i0 = e.g[0];
+    var dd = m ? +m[3] + '<small>' + WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + '</small>' : '<span class="dq">—</span>';
+    var tags = e.g.map(function (i) { return '<span class="tg ti" data-i="' + esc(i) + '">' + esc(i) + '</span>'; }).join('') +
+      (e.n ? '<span class="tg tw" data-n="' + esc(e.n) + '">' + esc(e.n) + '</span>' : '') +
+      (e.o ? '<span class="also">ほかの記事：' + e.o.map(function (o) { return '<a href="' + esc(o[1]) + '" target="_blank" rel="noopener" title="' + esc(o[2]) + '">' + esc(o[0]) + '</a>'; }).join('・') + '</span>' : '');
+    return '<li class="ur sr"><span class="ud">' + dd + '</span>' +
+      '<span class="ic" style="--h:' + hue(i0) + '" title="' + esc(i0) + '">' + esc(AB[i0] || '他') + '</span>' +
+      '<span class="sb"><a class="un" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + esc(e.t) + '</a>' +
+      '<span class="tags">' + tags + '</span></span><span class="st">' + esc(e.s) + (e.c ? '<b class="cn" title="伝えた記事の数">' + e.c + '</b>' : '') + '</span></li>';
+  }
+  var lastG = '';
+  function mon(e) { var m = /^(\d{4})-(\d{2})/.exec(e.d || ''); return m ? m[1] + '年' + (+m[2]) + '月' : '日付なし'; }
+  function render(more) {
+    if (!more) { $('list').innerHTML = ''; shown = 0; lastG = ''; }
+    var big = $('big').checked;
+    var h = '';
+    res.slice(shown, shown + PAGE).forEach(function (e) { var g = big ? ((e.c || 1) + ' 件が伝えた話題') : mon(e); if (g !== lastG) { h += '<li class="ug">' + esc(g) + '</li>'; lastG = g; } h += row(e); });
+    $('list').insertAdjacentHTML('beforeend', h);
+    shown = Math.min(shown + PAGE, res.length);
+    $('more').hidden = shown >= res.length;
+  }
+  function subs() {   // 選んだまとまりの項目ボタン
+    if (!grp) { $('sub').hidden = true; $('sub').innerHTML = ''; return; }
+    $('sub').innerHTML = G[grp].map(function (i) {
+      return '<button type="button" data-i="' + esc(i) + '" style="--h:' + hue(i) + '"' + (picked[i] ? ' class="on"' : ex[i] ? ' class="ng"' : '') + ' title="1回で絞り込み、2回で除外、3回で元に戻す"' + '>' + esc(i) + '<span class="n"></span></button>';
+    }).join('');
+    $('sub').hidden = G[grp].length < 2 && !SUB[grp];
+  }
+  function exrow() {   // 除外している項目（まとまりを切り替えても効いたまま。押すと除外をやめる）
+    var xs = Object.keys(ex);
+    $('exrow').hidden = !xs.length;
+    $('exrow').innerHTML = xs.length ? '除外中：' + xs.map(function (i) { return '<button type="button" data-i="' + esc(i) + '" style="--h:' + hue(i) + '">' + esc(i) + ' ×</button>'; }).join('') : '';
+  }
+  function inGroup(e, g) { return e.g.some(function (i) { return GI[i] === g; }); }
+  function search() {
+    var terms = $('q').value.split(/\s+/).map(norm).filter(Boolean), site = $('site').value;
+    var base0 = all.filter(function (e) { return (!site || e.s === site || (e.o || []).some(function (o) { return o[0] === site; })) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
+    var xs = Object.keys(ex);
+    var base = xs.length ? base0.filter(function (e) { return !xs.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : base0;
+    exrow();
+    [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
+      var g = b.getAttribute('data-g'); b.querySelector('.n').textContent = ' ' + (g ? base.filter(function (e) { return inGroup(e, g); }).length : base.length).toLocaleString();
+    });
+    var inG = grp ? base.filter(function (e) { return inGroup(e, grp); }) : base;
+    [].forEach.call(document.querySelectorAll('#sub button'), function (b) {
+      var i = b.getAttribute('data-i'); b.querySelector('.n').textContent = ' ' + (ex[i] ? base0.filter(function (e) { return !grp || inGroup(e, grp); }) : inG).filter(function (e) { return e.g.indexOf(i) >= 0; }).length.toLocaleString();
+    });
+    var ps = Object.keys(picked);
+    res = (grp && SUB[grp] && !ps.length) ? [] : ps.length ? inG.filter(function (e) { return ps.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : inG;
+    if ($('old').checked) res = res.slice().reverse();
+    if ($('big').checked) res = res.slice().sort(function (a, b) { return (b.c || 1) - (a.c || 1); });
+    $('count').textContent = (grp && SUB[grp] && !ps.length) ? '小カテゴリを選ぶと記事が出ます' : res.length.toLocaleString() + ' 件 / 全 ' + all.length.toLocaleString() + ' 件';
+    render(false);
+    var qs = [];
+    if ($('q').value) qs.push('q=' + encodeURIComponent($('q').value));
+    if (grp) qs.push('g=' + encodeURIComponent(grp));
+    if (ps.length) qs.push('i=' + encodeURIComponent(ps.join(',')));
+    if (xs.length) qs.push('x=' + encodeURIComponent(xs.join(',')));
+    try { history.replaceState(null, '', qs.length ? '?' + qs.join('&') : location.pathname); } catch (x) {}
+  }
+  function setGroup(g) {
+    grp = g; picked = {};
+    [].forEach.call(document.querySelectorAll('#seg button'), function (x) { x.classList.toggle('on', x.getAttribute('data-g') === g); });
+    subs();
+  }
+  fetch(window.NEWS).then(function (r) { return r.json(); }).then(function (j) {
+    groups = j.groups || [];
+    groups.forEach(function (x) { G[x[0]] = x[1]; if (x[2]) SUB[x[0]] = 1; x[1].forEach(function (i) { GI[i] = x[0]; }); });
+    all = j.items || [];
+    all.forEach(function (e) { e._t = norm([e.t, e.n, e.s].concat((e.o || []).map(function (o) { return o[0] + ' ' + o[2]; })).join(' ')); });
+    var p = new URLSearchParams(location.search);
+    if (p.get('q')) $('q').value = p.get('q');
+    (p.get('x') || '').split(',').forEach(function (i) { if (GI[i]) ex[i] = 1; });
+    if (p.get('g') && G[p.get('g')]) { setGroup(p.get('g')); (p.get('i') || '').split(',').forEach(function (i) { if (GI[i] === grp) picked[i] = 1; }); subs(); }
+    search();
+  });
+  var timer;
+  $('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(search, 150); });
+  ['site', 'old', 'big'].forEach(function (id) { $(id).addEventListener('change', search); });
+  $('seg').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    setGroup(b.getAttribute('data-g')); search();
+  });
+  $('sub').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    var i = b.getAttribute('data-i');
+    if (picked[i]) { delete picked[i]; ex[i] = 1; } else if (ex[i]) delete ex[i]; else picked[i] = 1;   // 1回で絞り込み、2回で除外、3回で元に戻す
+    b.classList.toggle('on', !!picked[i]); b.classList.toggle('ng', !!ex[i]); search();
+  });
+  $('list').addEventListener('click', function (ev) {   // 記事の下の項目・作品名を押すと、その項目だけ／その作品名で検索
+    var t = ev.target.closest('.tg'); if (!t) return;
+    if (t.getAttribute('data-n')) { $('q').value = t.getAttribute('data-n'); search(); window.scrollTo(0, 0); return; }
+    var i = t.getAttribute('data-i'); if (!i) return;
+    setGroup(GI[i]); picked = {}; picked[i] = 1; delete ex[i]; subs(); search(); window.scrollTo(0, 0);
+  });
+  $('exrow').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    delete ex[b.getAttribute('data-i')]; subs(); search();
+  });
+  $('more').addEventListener('click', function () { render(true); });
+})();

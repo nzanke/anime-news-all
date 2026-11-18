@@ -1,6 +1,6 @@
 name: サイトを組み立てて公開
-# 30分ごとに、RSS（feeds.json）の新しい見出しを足し（rss.py）、MANTANWEB・アニメイトタイムズの見出しの一覧（非公開の anime-database が
-# 毎日18時30分に作って公開の anime-world に置く newsall_sites.json）を取ってきて、振り分け（tag.py）→ 組み立て → 公開する。
+# 30分ごとに、RSS（feeds.json）の新しい見出しを足し（rss.py）、振り分け（tag.py）→ 組み立て → 公開する。
+# MANTANWEB・アニメイトタイムズの自動取得の記事は 2026-11-18 から使わない（過去の版は archive/2026-11-18、/old/2026-11-18/ で見られる）。
 # 公開リポジトリなので実行時間は無料。GitHub の混み具合で数分〜数十分遅れることがある。
 on:
   push:
@@ -25,9 +25,6 @@ jobs:
           python-version: '3.12'
       - name: 使っていない gh-pages の枝が残っていれば消す
         run: git push origin --delete gh-pages || true
-      - name: 各サイトの見出しの一覧を取ってくる
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/nzanke/anime-world/main/data/newsall_sites.json -o /tmp/s.json && python3 -c "import json;json.load(open('/tmp/s.json'))" && cp /tmp/s.json data/newsall_sites.json || echo '各サイトの見出しの一覧を取れなかったので、手元のものを使います'
       - name: RSS を読む
         run: python3 rss.py
       - name: 振り分けて一覧を作る

@@ -91,9 +91,11 @@ def _day(d):
     import datetime
     try: return datetime.date.fromisoformat(d).toordinal()
     except Exception: return 0
+# MANTANWEB・アニメイトタイムズの自動取得の記事は使わない（依頼者の判断、2026-11-18。サイトの軸を RSS に戻す。過去の版は archive/2026-11-18）
+USE_SITES = False
 def records():
     p = os.path.join(HERE, 'data', 'newsall_sites.json')
-    if os.path.exists(p):
+    if USE_SITES and os.path.exists(p):
         for x in json.load(open(p, encoding='utf-8')):
             yield {'url': x['u'], 'title': x['t'], 'date': x['d'], 'site': x['s'], 'anime': 1, 'lt': x.get('lt', []), 'la': x.get('la'), 'lx': x.get('lx')}
     FI = {f['name']: f for f in json.load(open(os.path.join(HERE, 'feeds.json'), encoding='utf-8'))['feeds']}   # 手がかりの項目はいまの feeds.json から（項目名を変えても効くように）
