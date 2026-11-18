@@ -109,7 +109,7 @@ LEAD_RX = {
     '訃報': r'死去|亡くなった|逝去|訃報|永眠',
 }
 LEAD_ITEMS = list(LEAD_RX)
-LEAD_VERSION = 3   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
+LEAD_VERSION = 4   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
 _LRX = [(i, re.compile(r)) for i, r in LEAD_RX.items()]
 
 def lead(text):
@@ -123,5 +123,6 @@ def lead_tags(text):
     out = {'lt': [i for i, rx in _LRX if rx.search(t)], 'lv': LEAD_VERSION}
     if ANIME.search(t): out['la'] = 1
     if LIVE.search(t): out['lx'] = 1
-    if WORKS.search(t) or CTX.search(t): out['lw'] = 1   # 書き出しに作品タイトル・アニメの話題の語（RSS の書き出しには検索の「アニメ」がほぼ必ず入るので、その語は数えない）
+    m = WORKS.search(t) or CTX.search(t)
+    if m: out['lw'] = m.group(0)   # 当たった語そのものを残す（本文ではなく判定の理由。弾きすぎ・残しすぎを調べるため）   # 書き出しに作品タイトル・アニメの話題の語（RSS の書き出しには検索の「アニメ」がほぼ必ず入るので、その語は数えない）
     return out
