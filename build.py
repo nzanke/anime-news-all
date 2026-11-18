@@ -37,14 +37,20 @@ ABOUT = f'''<details class="about"><summary><span class="qi">?</span>このサ�
 <p>アニメの制作決定と放送日・公開日だけを見るなら <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>。</p>
 </div></details>'''
 
-nsites = [x for x, _ in Counter(e['s'] for e in NEWS['items']).most_common()]
+from sitegenre import genre, ORDER as GORDER
+_sc = Counter(s for e in NEWS['items'] for s in [e['s']] + [o[0] for o in e.get('o', [])])
+nsites = [x for x, _ in _sc.most_common()]
+SITES = [[g, [[s, _sc[s]] for s in nsites if genre(s) == g]] for g in GORDER]
+SITES = [x for x in SITES if x[1]]   # サイトを選ぶパネル：ジャンルごとのサイトと記事数
 btns = ''.join(f'<button type="button" data-g="{esc(g)}" style="--h:{h}"{" class=on" if not g else ""}>{esc(t)}<span class="n"></span></button>'
                for g, t, h in [('', 'すべて', 250)] + [(x[0], x[0], HUE.get(x[0], 70)) for x in GROUPS])
 body = f'''<div class="seg" id="seg">{btns}</div>
 <div id="sub" hidden></div>
 <div id="exrow" hidden></div>
 <div class="sbar"><input type="search" id="q" placeholder="作品名・題名で検索">
-<select id="site"><option value="">すべてのサイト</option>{"".join(f'<option>{esc(x)}</option>' for x in nsites)}</select></div>
+<button type="button" id="sitebtn" class="sitebtn" aria-expanded="false"><span>サイト</span><b id="sitelbl">すべて</b><i>▾</i></button></div>
+<div id="sitepanel" class="sitepanel" hidden></div>
+<div id="siterow" class="siterow" hidden></div>
 <div class="opts"><label><input type="checkbox" id="old"> 古い順</label><label><input type="checkbox" id="big"> 伝えた記事の多い順</label></div>
 <div class="cbar"><p class="count" id="count"></p>{ABOUT}</div>
 <ul class="ulist" id="list"></ul>
@@ -60,7 +66,7 @@ doc = f'''<!DOCTYPE html>
 {body}
 </main>
 <footer class="site"><p>新聞各紙・ニュースサイトのアニメに関する記事の見出しとリンクを30分ごとに集めて並べています（記事の本文は載せていません）。<a href="old/2026-11-18/">2026年11月18日までの版</a>。制作決定は <a href="https://nzanke.github.io/anime-news/">アニメ制作決定ニュース</a>、インタビュー記事は <a href="https://nzanke.github.io/anime-world/">アニメインタビュー検索</a>。</p></footer>
-</div><script>window.NEWS="newsall.json?v={NEWS_V}";window.HUE={json.dumps(HUE, ensure_ascii=False)}</script><script src="news.js?v={NJS_V}"></script><script data-goatcounter="https://nzanke.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script></body></html>
+</div><script>window.NEWS="newsall.json?v={NEWS_V}";window.HUE={json.dumps(HUE, ensure_ascii=False)};window.SITES={json.dumps(SITES, ensure_ascii=False)}</script><script src="news.js?v={NJS_V}"></script><script data-goatcounter="https://nzanke.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script></body></html>
 '''
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(doc)
 print('組み立て', len(NEWS['items']), '件')

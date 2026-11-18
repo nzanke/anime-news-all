@@ -1,7 +1,7 @@
 // アニメニュース検索：newsall.json を読み、まとまり（色のボタン）・項目（その下のボタン。複数可）・検索・サイトでその場で絞り込む
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, ex = {}, SUB = {}, G = {}, GI = {}, groups = [];
+  var PAGE = 200, all = [], res = [], shown = 0, grp = '', picked = {}, ex = {}, SEL = {}, SUB = {}, G = {}, GI = {}, groups = [];
   var HUE = window.HUE || {};
   // 項目の印（一覧の左に出す。記事の最初の項目）
   var AB = { '制作決定（テレビアニメ化）': 'TV', '制作決定（映画化）': '映画', '制作決定（その他）': '決', '放送・公開日': '日', 'キャスト公開': '声', 'SNS開設': 'SNS', 'アニソン': '歌', 'スタッフ': 'ス', '主題歌・音楽': '♪', '映像解禁': '映', 'ビジュアル公開': '絵', '原作': '原', '各話レビュー・反応': '話',
@@ -52,8 +52,8 @@
   }
   function inGroup(e, g) { return e.g.some(function (i) { return GI[i] === g; }); }
   function search() {
-    var terms = $('q').value.split(/\s+/).map(norm).filter(Boolean), site = $('site').value;
-    var base0 = all.filter(function (e) { return (!site || e.s === site || (e.o || []).some(function (o) { return o[0] === site; })) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
+    var terms = $('q').value.split(/\s+/).map(norm).filter(Boolean), ss = Object.keys(SEL);
+    var base0 = all.filter(function (e) { return (!ss.length || SEL[e.s] || (e.o || []).some(function (o) { return SEL[o[0]]; })) && terms.every(function (t) { return e._t.indexOf(t) >= 0; }); });
     var xs = Object.keys(ex);
     var base = xs.length ? base0.filter(function (e) { return !xs.some(function (i) { return e.g.indexOf(i) >= 0; }); }) : base0;
     exrow();
@@ -75,6 +75,8 @@
     if (grp) qs.push('g=' + encodeURIComponent(grp));
     if (ps.length) qs.push('i=' + encodeURIComponent(ps.join(',')));
     if (xs.length) qs.push('x=' + encodeURIComponent(xs.join(',')));
+    if (ss.length) qs.push('s=' + encodeURIComponent(ss.join('|')));
+    siteui();
     try { history.replaceState(null, '', qs.length ? '?' + qs.join('&') : location.pathname); } catch (x) {}
   }
   function setGroup(g) {
@@ -89,13 +91,14 @@
     all.forEach(function (e) { e._t = norm([e.t, e.n, e.s].concat((e.o || []).map(function (o) { return o[0] + ' ' + o[2]; })).join(' ')); });
     var p = new URLSearchParams(location.search);
     if (p.get('q')) $('q').value = p.get('q');
+    (p.get('s') || '').split('|').forEach(function (s) { if (s) SEL[s] = 1; });
     (p.get('x') || '').split(',').forEach(function (i) { if (GI[i]) ex[i] = 1; });
     if (p.get('g') && G[p.get('g')]) { setGroup(p.get('g')); (p.get('i') || '').split(',').forEach(function (i) { if (GI[i] === grp) picked[i] = 1; }); subs(); }
     search();
   });
   var timer;
   $('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(search, 150); });
-  ['site', 'old', 'big'].forEach(function (id) { $(id).addEventListener('change', search); });
+  ['old', 'big'].forEach(function (id) { $(id).addEventListener('change', search); });
   $('seg').addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
     setGroup(b.getAttribute('data-g')); search();
@@ -116,5 +119,38 @@
     var b = ev.target.closest('button'); if (!b) return;
     delete ex[b.getAttribute('data-i')]; subs(); search();
   });
+  // ---- サイトを選ぶパネル（ジャンルごと。複数選べる）
+  function siteui() {
+    var ss = Object.keys(SEL);
+    $('sitelbl').textContent = ss.length ? (ss.length === 1 ? ss[0] : ss.length + 'サイト') : 'すべて';
+    $('sitebtn').classList.toggle('on', ss.length > 0);
+    $('siterow').hidden = !ss.length;
+    $('siterow').innerHTML = ss.map(function (s) { return '<button type="button" data-s="' + esc(s) + '">' + esc(s) + ' ×</button>'; }).join('') + (ss.length ? '<button type="button" class="clr" data-clr="1">すべて外す</button>' : '');
+    [].forEach.call(document.querySelectorAll('#sitepanel [data-s]'), function (b) { b.classList.toggle('on', !!SEL[b.getAttribute('data-s')]); });
+    [].forEach.call(document.querySelectorAll('#sitepanel [data-g]'), function (b) {
+      var g = (window.SITES || []).filter(function (x) { return x[0] === b.getAttribute('data-g'); })[0];
+      b.classList.toggle('on', !!g && g[1].every(function (x) { return SEL[x[0]]; }));
+    });
+  }
+  function sitepanel() {
+    $('sitepanel').innerHTML = (window.SITES || []).map(function (g) {
+      return '<section><h3><span>' + esc(g[0]) + '</span><button type="button" class="all" data-g="' + esc(g[0]) + '">まとめて選ぶ</button></h3><div class="chips">' +
+        g[1].map(function (x) { return '<button type="button" data-s="' + esc(x[0]) + '">' + esc(x[0]) + '<span class="n">' + x[1] + '</span></button>'; }).join('') + '</div></section>';
+    }).join('') + '<div class="foot"><button type="button" class="clr" data-clr="1">すべて外す</button><button type="button" class="done" data-done="1">閉じる</button></div>';
+  }
+  function openpanel(o) { $('sitepanel').hidden = !o; $('sitebtn').setAttribute('aria-expanded', o ? 'true' : 'false'); }
+  $('sitebtn').addEventListener('click', function () { if (!$('sitepanel').innerHTML) sitepanel(); siteui(); openpanel($('sitepanel').hidden); });
+  function siteclick(ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    if (b.getAttribute('data-done')) { openpanel(false); return; }
+    if (b.getAttribute('data-clr')) SEL = {};
+    else if (b.getAttribute('data-g')) {
+      var g = (window.SITES || []).filter(function (x) { return x[0] === b.getAttribute('data-g'); })[0], on = g[1].every(function (x) { return SEL[x[0]]; });
+      g[1].forEach(function (x) { if (on) delete SEL[x[0]]; else SEL[x[0]] = 1; });
+    } else if (b.getAttribute('data-s')) { var s = b.getAttribute('data-s'); if (SEL[s]) delete SEL[s]; else SEL[s] = 1; }
+    search();
+  }
+  $('sitepanel').addEventListener('click', siteclick);
+  $('siterow').addEventListener('click', siteclick);
   $('more').addEventListener('click', function () { render(true); });
 })();
