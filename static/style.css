@@ -305,3 +305,11 @@ h2.add-one{margin-top:8px}
 .sitepanel .chips button,.sitepanel .foot button,.siterow .clr{background:oklch(.27 .01 250);border-color:oklch(.35 .02 250)}
 .sitepanel .foot{background:linear-gradient(transparent,oklch(.22 .01 250) 30%)}
 .sitepanel h3{color:oklch(.8 .05 250)}}
+
+/* 同じ話題の見出しを広げる */
+.sr .tags .more{margin-left:8px;font:inherit;font-size:12px;color:var(--muted);background:none;border:1px solid var(--line,#ccc);border-radius:999px;padding:1px 9px;cursor:pointer}
+.sr .tags .more:hover,.sr .tags .more[aria-expanded="true"]{color:var(--fg,inherit);border-color:currentColor}
+.olist{list-style:none;margin:6px 0 2px;padding:0 0 0 10px;border-left:2px solid var(--line,#ccc)}
+.olist li{padding:3px 0;font-size:13px;line-height:1.5}
+.olist a{color:inherit}
+.olist .os{margin-left:8px;font-size:11px;color:var(--muted);white-space:nowrap}

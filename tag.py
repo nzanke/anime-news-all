@@ -194,21 +194,24 @@ def bigr(t):
 def day(d):
     try: return datetime.date.fromisoformat(d).toordinal()
     except Exception: return 0
-SAME = 0.4
+SAME = 0.25   # 2026-11-18 依頼者「もっとカジュアルにまとめて」で 0.4 → 0.25
+SAME_BR = 0.12   # 「」『』の中身（4文字以上）が同じなら、これだけ重なればまとめる
+def brs(t): return {x for x in re.findall(r'[「『]([^」』]{4,60})[」』]', nf(t))}
 def mark(t): return tuple(re.findall(r'第\s*\d+\s*[弾回話期章部]|前編|後編|中編|\d+日目', nf(t)))
 clusters = []   # [代表, [記事...], 組の集合]
 for e in sorted(items, key=lambda e: (e['d'], e['u'])):
-    b, dd = bigr(e['t']), day(e['d'])
+    b, dd, br = bigr(e['t']), day(e['d']), brs(e['t'])
     best, bs = None, 0
     for c in clusters[-400:]:
-        if abs(day(c[0]['d']) - dd) > 3: continue
+        if abs(day(c[0]['d']) - dd) > 4: continue
         if e.get('n') and c[0].get('n') and re.sub(r'\s', '', e['n']) != re.sub(r'\s', '', c[0]['n']): continue
         if e['s'] in {x['s'] for x in c[1]}: continue   # 同じサイトは同じ話を2度載せないので、まとめるのは違うサイトの記事だけ
         if mark(e['t']) != mark(c[0]['t']) and mark(e['t']) and mark(c[0]['t']): continue   # 第2弾と第3弾、前編と後編
         sim = 2 * len(b & c[2]) / max(1, len(b) + len(c[2]))
+        if br & c[3] and sim >= SAME_BR: sim = max(sim, SAME)
         if sim > bs: best, bs = c, sim
-    if best and bs >= SAME: best[1].append(e)
-    else: clusters.append([e, [e], b])
+    if best and bs >= SAME: best[1].append(e); best[3] |= br
+    else: clusters.append([e, [e], b, brs(e['t'])])
 out = []
 for c in clusters:
     es = c[1]

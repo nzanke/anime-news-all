@@ -21,12 +21,18 @@
     var dd = m ? +m[3] + '<small>' + WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + '</small>' : '<span class="dq">—</span>';
     var tags = e.g.map(function (i) { return '<span class="tg ti" data-i="' + esc(i) + '">' + esc(i) + '</span>'; }).join('') +
       (e.n ? '<span class="tg tw" data-n="' + esc(e.n) + '">' + esc(e.n) + '</span>' : '') +
-      (e.o ? '<span class="also">ほかの記事：' + e.o.map(function (o) { return '<a href="' + esc(o[1]) + '" target="_blank" rel="noopener" title="' + esc(o[2]) + '">' + esc(o[0]) + '</a>'; }).join('・') + '</span>' : '');
+      (e.o ? '<button type="button" class="more" aria-expanded="false">ほか ' + e.o.length + ' 件の見出し ▾</button>' : '');
+    var more = e.o ? '<ul class="olist" hidden>' + e.o.map(function (o) { return '<li><a href="' + esc(o[1]) + '" target="_blank" rel="noopener">' + esc(o[2]) + '</a><span class="os">' + esc(o[0]) + '</span></li>'; }).join('') + '</ul>' : '';
     return '<li class="ur sr"><span class="ud">' + dd + '</span>' +
       '<span class="ic" style="--h:' + hue(i0) + '" title="' + esc(i0) + '">' + esc(AB[i0] || '他') + '</span>' +
       '<span class="sb"><a class="un" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + esc(e.t) + '</a>' +
-      '<span class="tags">' + tags + '</span></span><span class="st">' + esc(e.s) + (e.c ? '<b class="cn" title="伝えた記事の数">' + e.c + '</b>' : '') + '</span></li>';
+      '<span class="tags">' + tags + '</span>' + more + '</span><span class="st">' + esc(e.s) + (e.c ? '<b class="cn" title="伝えた記事の数">' + e.c + '</b>' : '') + '</span></li>';
   }
+  document.addEventListener('click', function (ev) {   // 同じ話題の見出しを広げる・たたむ
+    var b = ev.target.closest && ev.target.closest('.more'); if (!b) return;
+    var ul = b.closest('.sb').querySelector('.olist'), open = ul.hidden;
+    ul.hidden = !open; b.setAttribute('aria-expanded', open); b.textContent = b.textContent.replace(open ? '▾' : '▴', open ? '▴' : '▾');
+  });
   var lastG = '';
   function mon(e) { var m = /^(\d{4})-(\d{2})/.exec(e.d || ''); return m ? m[1] + '年' + (+m[2]) + '月' : '日付なし'; }
   function render(more) {
