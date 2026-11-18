@@ -21,17 +21,17 @@
     var dd = m ? +m[3] + '<small>' + WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + '</small>' : '<span class="dq">—</span>';
     var tags = e.g.map(function (i) { return '<span class="tg ti" data-i="' + esc(i) + '">' + esc(i) + '</span>'; }).join('') +
       (e.n ? '<span class="tg tw" data-n="' + esc(e.n) + '">' + esc(e.n) + '</span>' : '') +
-      (e.o ? '<button type="button" class="omore" aria-expanded="false" title="同じ話題のほかの記事の見出しを広げる">+' + e.o.length + ' ▾</button>' : '');
+      '';
     var more = e.o ? '<ul class="olist" hidden>' + e.o.map(function (o) { return '<li><a href="' + esc(o[1]) + '" target="_blank" rel="noopener">' + esc(o[2]) + '</a><span class="os">' + esc(o[0]) + '</span></li>'; }).join('') + '</ul>' : '';
     return '<li class="ur sr"><span class="ud">' + dd + '</span>' +
       '<span class="ic" style="--h:' + hue(i0) + '" title="' + esc(i0) + '">' + esc(AB[i0] || '他') + '</span>' +
       '<span class="sb"><a class="un" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + esc(e.t) + '</a>' +
-      '<span class="tags">' + tags + '</span>' + more + '</span><span class="st">' + esc(e.s) + (e.c ? '<b class="cn" title="伝えた記事の数">' + e.c + '</b>' : '') + '</span></li>';
+      '<span class="tags">' + tags + '</span>' + more + '</span><span class="st">' + esc(e.s) + (e.c ? '<button type="button" class="cn" aria-expanded="false" title="伝えた記事の数（押すと見出しを全部広げる）">' + e.c + '</button>' : '') + '</span></li>';
   }
-  document.addEventListener('click', function (ev) {   // 同じ話題の見出しを広げる・たたむ
-    var b = ev.target.closest && ev.target.closest('.omore'); if (!b) return;
-    var ul = b.closest('.sb').querySelector('.olist'), open = ul.hidden;
-    ul.hidden = !open; b.setAttribute('aria-expanded', open); b.textContent = b.textContent.replace(open ? '▾' : '▴', open ? '▴' : '▾');
+  document.addEventListener('click', function (ev) {   // 青い件数を押すと、同じ話題の見出しを広げる・たたむ
+    var b = ev.target.closest && ev.target.closest('button.cn'); if (!b) return;
+    var ul = b.closest('li').querySelector('.olist'); if (!ul) return;
+    ul.hidden = !ul.hidden; b.setAttribute('aria-expanded', !ul.hidden);
   });
   var lastG = '';
   function mon(e) { var m = /^(\d{4})-(\d{2})/.exec(e.d || ''); return m ? m[1] + '年' + (+m[2]) + '月' : '日付なし'; }
