@@ -90,6 +90,7 @@ LEAD_RX = {
     '訃報': r'死去|亡くなった|逝去|訃報|永眠',
 }
 LEAD_ITEMS = list(LEAD_RX)
+LEAD_VERSION = 2   # 書き出しの規則を変えたら上げる（rss.py が、まだ RSS に載っている記事の判定を付け直す）
 _LRX = [(i, re.compile(r)) for i, r in LEAD_RX.items()]
 
 def lead(text):
@@ -100,7 +101,7 @@ def lead_tags(text):
     """書き出しから、記録だけしておく判定の結果を返す（文章は返さない）。lt=当たった項目、la=アニメの語があるか、lx=実写・特撮などの語があるか"""
     t = lead(text)
     if not t: return {}
-    out = {'lt': [i for i, rx in _LRX if rx.search(t)]}
+    out = {'lt': [i for i, rx in _LRX if rx.search(t)], 'lv': LEAD_VERSION}
     if ANIME.search(t): out['la'] = 1
     if LIVE.search(t): out['lx'] = 1
     return out

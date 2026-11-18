@@ -114,7 +114,7 @@ if True:
         if r.get('date'): SEEN_T[tk] = _day(r['date'])
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
-        if not r.get('anime') and not ANIME.search(t) and not r.get('la'): continue   # 見出しにも書き出しにもアニメの語がない（anime_title の RSS など）   # アニメ欄以外の一覧（映画欄）の実写映画など
+        if not r.get('anime') and not ANIME.search(t): continue   # 見出しにアニメの語がない（anime_title の RSS）。RSS は「アニメ」で検索したものなので書き出しにはほぼ必ずアニメの語があり、手がかりにならない   # アニメ欄以外の一覧（映画欄）の実写映画など
         if 'アニメ!アニメ!' in nf(r.get('site')) and WHERE.search(t): continue
         lab = LABELS.get(key(r['url']))
         if lab and lab.get('x'): continue   # 「載せない」と分類された記事
@@ -124,7 +124,7 @@ if True:
         ct = re.sub(r'『[^』]*』', '、', t)
         if r.get('site') == 'MANTANWEB' and n and t.startswith(n) and not re.search(r'フェス|展|イベント|カフェ|ショップ|チャンネル|ネイション|Con|祭|(監督|社長|プロデューサー|P|役|さん)$', n): ct = ct[len(n):].lstrip(':： ')
         tags = [i for g, i, rx in RX if rx.search(ct)] or ['その他']
-        lt = [x for x in (r.get('lt') or []) if x not in tags]   # 書き出し（最初の200字）で当たった項目（rules.py の LEAD_ITEMS だけ）
+        lt = [x for x in (r.get('lt') or []) if x not in tags and x in LEAD_ITEMS]   # 書き出し（最初の200字）で当たった項目（rules.py の LEAD_ITEMS だけ）
         if lt: tags = [x for x in tags if x != 'その他'] + lt
         if r.get('ceek_items') and not set(tags) & set(r['ceek_items']): tags = [x for x in tags if x != 'その他'] + [r['ceek_items'][0]]   # RSS の手がかり（feeds.json の items。訃報・人事の RSS なら訃報か会社・経営のどちらかには入れる）
         if '制作決定（テレビアニメ化）' in tags:   # テレビアニメ化／映画化／その他（続編・配信・OVA など）の1つにする

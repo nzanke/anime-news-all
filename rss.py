@@ -6,7 +6,7 @@
 import email.utils, html, json, os, re, time
 import urllib.request, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rules import lead_tags
+from rules import lead_tags, LEAD_VERSION
 from urllib.parse import urlsplit, parse_qsl, urlencode
 
 def canon(u):
@@ -36,7 +36,9 @@ for f in json.load(open(os.path.join(HERE, 'feeds.json'), encoding='utf-8'))['fe
         lt = lead_tags(re.sub(r'<[^>]+>', ' ', g('description')))   # 書き出しの判定の結果だけ（文章は残さない）
         c = canon(u)
         if c in idx:
-            if 'lt' not in rows[idx[c]] and lt: rows[idx[c]].update(lt); filled += 1
+            if lt and rows[idx[c]].get('lv') != LEAD_VERSION:   # 判定がない・古い規則の判定なら付け直す
+                for kk in ('lt', 'la', 'lx'): rows[idx[c]].pop(kk, None)
+                rows[idx[c]].update(lt); filled += 1
             continue
         m = re.match(r'(.*?)\s*[(（]([^()（）]{1,30})[)）]\s*$', t)
         title, site = (m.group(1), m.group(2)) if m else (t, '')
