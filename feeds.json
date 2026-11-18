@@ -1,12 +1,12 @@
 {
-  "_説明": "アニメニュース検索で30分ごとに読む RSS（rss.py）。依頼者が用意し、絞り込みも依頼者が決める。name は記録用の名前。items は振り分けの手がかり（見出しの規則でこの中のどれにも当たらなければ先頭の項目に入れる）。anime_title を true にすると、見出しにアニメに関する語（tag.py の ANIME）がある記事だけを載せる。記事のリンクは各紙の元記事。本文は読まない。",
+  "_説明": "アニメニュース検索で30分ごとに読む RSS（rss.py）。依頼者が用意し、絞り込みも依頼者が決める。name は記録用の名前。items は振り分けの手がかり（tag.py は記事に記録した値でなく、いまの feeds.json の値を使う）（見出しの規則でこの中のどれにも当たらなければ先頭の項目に入れる）。anime_title を true にすると、見出しにアニメに関する語（tag.py の ANIME）がある記事だけを載せる。記事のリンクは各紙の元記事。本文は読まない。",
   "feeds": [
     {
       "name": "訃報・人事×アニメ",
       "url": "https://news.ceek.jp/search.cgi?q=category_id%3Aobituaries%20%E3%82%A2%E3%83%8B%E3%83%A1&feed=1",
       "items": [
         "訃報",
-        "会社・業界"
+        "会社・経営"
       ]
     },
     {
@@ -48,14 +48,14 @@
       "name": "経済×アニメ",
       "url": "https://news.ceek.jp/search.cgi?q=category_id%3Abusiness%20%E3%82%A2%E3%83%8B%E3%83%A1&feed=1",
       "items": [
-        "会社・業界"
+        "会社・経営"
       ]
     },
     {
       "name": "政治×アニメ",
       "url": "https://news.ceek.jp/search.cgi?q=category_id%3Apolitics%20%E3%82%A2%E3%83%8B%E3%83%A1&feed=1",
       "items": [
-        "会社・業界"
+        "政策・行政"
       ]
     },
     {
