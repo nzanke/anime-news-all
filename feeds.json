@@ -27,7 +27,8 @@
     {
       "name": "スポーツ×アニメ",
       "url": "https://news.ceek.jp/search.cgi?q=category_id%3Asports%20%E3%82%A2%E3%83%8B%E3%83%A1&feed=1",
-      "items": []
+      "items": [],
+      "anime_title": true
     },
     {
       "name": "IT×アニメ",
