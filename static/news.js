@@ -34,7 +34,9 @@
     ul.hidden = !ul.hidden; b.setAttribute('aria-expanded', !ul.hidden);
   });
   var lastG = '';
-  function mon(e) { var m = /^(\d{4})-(\d{2})/.exec(e.d || ''); return m ? m[1] + '年' + (+m[2]) + '月' : '日付なし'; }
+  function ymd(t) { return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2); }
+  var NEWD = (function () { var t = new Date(), y = new Date(t.getTime() - 864e5); return [ymd(t), ymd(y)]; })();   // 今日と昨日は「新着ニュース」として、月とは別の見出しに
+  function mon(e) { if (NEWD.indexOf((e.d || '').slice(0, 10)) >= 0) return '新着ニュース（今日・昨日）'; var m = /^(\d{4})-(\d{2})/.exec(e.d || ''); return m ? m[1] + '年' + (+m[2]) + '月' : '日付なし'; }
   function render(more) {
     if (!more) { $('list').innerHTML = ''; shown = 0; lastG = ''; }
     var big = $('big').checked;
