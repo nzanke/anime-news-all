@@ -97,8 +97,15 @@ BR = re.compile(r'[「『]([^」』]{1,80})[」』]')
 CTX_LEAD = re.compile(CTX.pattern.replace('|声優', ''))
 def in_brackets(t):
     return ' / '.join(BR.findall(t))
-def is_anime_title(t):
-    t = nf(t); return bool(ANIME.search(t) or WORKS.search(in_brackets(t)) or CTX.search(t))
+# 括弧の外でも拾うもの：よく使われる呼び名と、6文字以上の長いタイトル（普通の言葉と重なりにくい）。依頼者の判断、2026-11-19
+ALIAS = 'ワンピース ONE PIECE エヴァンゲリオン エヴァ ガンダム ガンプラ プリキュア ポケモン ピカチュウ 初音ミク 銀魂 鬼滅 呪術廻戦 コナン ドラえもん クレヨンしんちゃん ジョジョ ドラゴンボール 鉄腕アトム ちいかわ ムーミン ジブリ トトロ ナウシカ 進撃の巨人 推しの子 フリーレン 薬屋のひとりごと SPY×FAMILY スパイファミリー チェンソーマン ハイキュー マクロス ウマ娘 ラブライブ アイマス アイドルマスター ホロライブ にじさんじ ちびまる子 NARUTO ナルト キングダム コジコジ プリコネ ガルクラ とある魔術 ルパン三世 サザエさん アンパンマン 禁書目録 超電磁砲'.split()
+_F = sorted(set(ALIAS) | {t for t in _T if len(t) >= 6}, key=len, reverse=True)
+WORKS_FREE = re.compile('|'.join(re.escape(t) for t in _F))
+# アニメ専門のサイトの記事は見出しにかかわらず載せる
+ANIME_SITES = {'アニメイトタイムズ', 'アニメ！アニメ！', 'リスアニ！', 'にじめん'}
+def is_anime_title(t, site=''):
+    if site in ANIME_SITES: return True
+    t = nf(t); return bool(ANIME.search(t) or WORKS.search(in_brackets(t)) or WORKS_FREE.search(t) or CTX.search(t))
 
 # 見出しにあったら載せない語（依頼者の分類で、ほぼすべて「載せない」だったもの。2026-11-18。見出しにアニメの語があれば外さない。ウルトラマンのソフビは「載せる」だったので入れない）
 NOT_ANIME = re.compile(r'仮面ライダー|スーパー戦隊|超英雄祭|戦隊ヒーロー|特撮(?!.{0,10}アニメ)|実写(映画|ドラマ)(?!.{0,10}アニメ)|トミカ|プラレール|卓球|WTT|プロ野球|ドラフト|株価|株前場|株後場|利上げ|金利')

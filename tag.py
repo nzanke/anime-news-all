@@ -122,7 +122,7 @@ if True:
         if r.get('date'): SEEN_T[tk] = _day(r['date'])
         if not t or SKIP.search(t) or (r.get('date') or '9') < START: continue
         if r.get('site') == 'アニメイトタイムズ' and SURVEY.search(nf(r.get('body', ''))): continue
-        if r.get('rss') and not is_anime_title(t) : continue   # RSS の文章は記事の冒頭とは限らず「アニメ」の前後の抜き出しが多いので、判定には使わず見出しだけで決める（依頼者の判断、2026-11-19）   # 書き出しの「声優」では拾わない。lv5 より前の書き出し判定は地の文で拾っていたので使わない   # RSS：見出しにアニメの語・作品タイトル・アニメの話題の語がなく、書き出しにも作品タイトルがない（rules.py）
+        if r.get('rss') and not is_anime_title(t, r.get('site', '')): continue   # RSS：見出しだけで決める（RSS の文章は記事の途中の抜き出しが多いので使わない）。アニメ専門サイトは残す（rules.py、2026-11-19）
         if not r.get('anime') and not ANIME.search(t): continue
         if NOT_ANIME.search(t) and not ANIME.search(t): continue   # 特撮・スポーツ・株など（rules.py の NOT_ANIME）   # 見出しにアニメの語がない（anime_title の RSS）。RSS は「アニメ」で検索したものなので書き出しにはほぼ必ずアニメの語があり、手がかりにならない   # アニメ欄以外の一覧（映画欄）の実写映画など
         if 'アニメ!アニメ!' in nf(r.get('site')) and WHERE.search(t): continue
