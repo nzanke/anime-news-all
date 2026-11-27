@@ -51,7 +51,7 @@ body = f'''<div class="seg" id="seg">{btns}</div>
 <button type="button" id="sitebtn" class="sitebtn" aria-expanded="false"><span>サイト</span><b id="sitelbl">すべて</b><i>▾</i></button></div>
 <div id="sitepanel" class="sitepanel" hidden></div>
 <div id="siterow" class="siterow" hidden></div>
-<div class="opts"><label><input type="checkbox" id="old"> 古い順</label><label><input type="checkbox" id="big"> 伝えた記事の多い順</label></div>
+<div class="opts"><label><input type="checkbox" id="old"> 古い順</label><label><input type="checkbox" id="big"> 伝えた記事の多い順</label><label class="qzl" title="質の低い情報を出すサイトの記事。ふだんの一覧には混ぜない"><input type="checkbox" id="qz"> 隔離した記事だけ見る（<span id="qzn">0</span>件）</label></div>
 <div class="cbar"><p class="count" id="count"></p>{ABOUT}</div>
 <ul class="ulist" id="list"></ul>
 <button class="more" id="more" hidden>さらに表示</button>'''

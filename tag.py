@@ -198,6 +198,11 @@ SAME = 0.25   # 2026-11-18 依頼者「もっとカジュアルにまとめて�
 SAME_BR = 0.12   # 「」『』の中身（4文字以上）が同じなら、これだけ重なればまとめる
 def brs(t): return {x for x in re.findall(r'[「『]([^」』]{4,60})[」』]', nf(t))}
 def mark(t): return tuple(re.findall(r'第\s*\d+\s*[弾回話期章部]|前編|後編|中編|\d+日目', nf(t)))
+# 隔離するサイト（quarantine.json）の記事は、まとめに入れずに別に置く
+try: QSITES = set(json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'quarantine.json'), encoding='utf-8')).get('sites', []))
+except Exception: QSITES = set()
+QZ = [dict(e, qz=1) for e in items if e['s'] in QSITES]
+items = [e for e in items if e['s'] not in QSITES]
 clusters = []   # [代表, [記事...], 組の集合]
 for e in sorted(items, key=lambda e: (e['d'], e['u'])):
     b, dd, br = bigr(e['t']), day(e['d']), brs(e['t'])
@@ -220,7 +225,7 @@ for c in clusters:
     r['g'] = sorted({x for e in es for x in e['g']}, key=lambda x: CAT_ORDER.index(x) if x in CAT_ORDER else 99) if RSS_CATS else show([x for e in es for x in e['g']])
     if len(es) > 1: r['o'] = [[x['s'], x['u'], x['t']] for x in es if x is not m]; r['c'] = len(es)
     out.append(r)
-items = sorted(out, key=lambda e: (e['d'], e['u']), reverse=True)
+items = sorted(out + QZ, key=lambda e: (e['d'], e['u']), reverse=True)
 groups = [[c, [c]] for c in CAT_ORDER if any(c in e['g'] for e in items)] if RSS_CATS else [[g, its] + ([1] if sub else []) for g, its, sub in SHOW]   # 3つ目が 1 の大カテゴリは、小カテゴリを選んだときだけ記事を出す
 json.dump({'groups': groups, 'items': items}, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 from collections import Counter
